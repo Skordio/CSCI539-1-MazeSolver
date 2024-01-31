@@ -1,10 +1,10 @@
 from enum import Enum
 
 class Walls(Enum):
-    TOP = 1
-    RIGHT = 2
-    BOTTOM = 3
-    LEFT = 4
+    TOP = 1             # bit 0b1000
+    RIGHT = 2           # bit 0b0100
+    BOTTOM = 3          # bit 0b0010
+    LEFT = 4            # bit 0b0001
 
 
 class Cell:
