@@ -15,11 +15,9 @@ class MazeEditor:
         self.reset_grid()
 
     def create_widgets(self):
-        # Create a frame as a container for the canvas
         self.frame = tk.Frame(self.master, bd=0, highlightbackground="black", highlightthickness=1)
         self.frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=20, pady=20, ipadx=5, ipady=0)
 
-        # Create the canvas within the frame
         self.canvas = tk.Canvas(self.frame)
         self.canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True,)
 
@@ -59,7 +57,7 @@ class MazeEditor:
         canvas_width = self.cell_size * self.maze.grid_size_x
         canvas_height = self.cell_size * self.maze.grid_size_y
         self.canvas.config(width=canvas_width, height=canvas_height)
-        self.master.geometry(f"{canvas_width+40}x{canvas_height+70}")  # Adjust window size, +50 for buttons
+        self.master.geometry(f"{canvas_width+40}x{canvas_height+70}")
         self.reset_grid()
 
     def draw_grid(self):
@@ -69,7 +67,6 @@ class MazeEditor:
                 self.draw_cell(i, j, x1, y1)
                 cell = self.maze.cells[(i, j)]
                 if cell.highlight_rect:
-                    # Redraw the highlight rectangle to ensure it's on top
                     self.canvas.tag_raise(cell.highlight_rect)
 
     def draw_cell(self, i, j, x1, y1):
@@ -90,13 +87,11 @@ class MazeEditor:
         x1, y1 = i * self.cell_size, j * self.cell_size
         x2, y2 = x1 + self.cell_size, y1 + self.cell_size
 
-        # Removing previous walls
         self.canvas.delete(f"wall-{i},{j}-top")
         self.canvas.delete(f"wall-{i},{j}-right")
         self.canvas.delete(f"wall-{i},{j}-bottom")
         self.canvas.delete(f"wall-{i},{j}-left")
 
-        # Drawing walls based on the cell's wall properties
         if cell.walls['top']:
             self.canvas.create_line(x1, y1, x2, y1, fill="black", tags=(f"wall-{i},{j}-top"))
         if cell.walls['right']:
