@@ -1,29 +1,23 @@
 from enum import Enum
-
-class Walls(Enum):
-    TOP = 1             # bit 0b1000
-    RIGHT = 2           # bit 0b0100
-    BOTTOM = 3          # bit 0b0010
-    LEFT = 4            # bit 0b0001
-
+from typing import Literal
 
 class Cell:
     isStart = False
     isEnd = False
     number = 0
-    walls:list[Walls] = []
+    walls = {'top': False, 'right': False, 'bottom': False, 'left': False}
     
     def __init__(self, x, y, xSize, ySize):
         self.x = x
         self.y = y
         if x == 0:
-            self.walls.append(Walls.LEFT)
+            self.walls.left = True
         if x == xSize-1:
-            self.walls.append(Walls.RIGHT)
+            self.walls.right = True
         if y == 0:
-            self.walls.append(Walls.TOP)
+            self.walls.top = True
         if y == ySize-1:
-            self.walls.append(Walls.BOTTOM)
+            self.walls.bottom = True
 
     def __str__(self):
         return f"({self.x}, {self.y})"
@@ -34,13 +28,8 @@ class Cell:
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y
     
-    def setWalls(self, walls: list[Walls]):
-        self.walls = walls
-        
-    def addWalls(self, walls: list[Walls]):
-        for wall in walls:
-            if wall not in self.walls:
-                self.walls.append(wall)
+    def setWall(self, wall:Literal['top', 'right', 'bottom', 'left'], value:bool):
+        self.walls[wall] = value
         
     def setStart(self):
         self.isStart = True
