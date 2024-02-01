@@ -86,11 +86,11 @@ class MazeEditor:
         self.cells[(i, j)].id = cell_id
         cell = self.cells[(i, j)]
         if cell.is_start:
-            self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text="S", fill="green")
+            self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text="S", fill="green", tags=(f"{cell.id}-start"))
         elif cell.is_end:
-            self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text="E", fill="red")
-        elif cell.number:
-            self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text=str(cell.number))
+            self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text="E", fill="red", tags=(f"{cell.id}-end"))
+        elif cell.number is not None:
+            self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text=str(cell.number), tags=(f"{cell.id}-number"))
         self.update_cell_walls(i, j)
 
     def update_cell_walls(self, i, j):
@@ -179,23 +179,44 @@ class MazeEditor:
 
     def set_start_cell(self):
         if self.highlighted_cell:
-            self.reset_start_end_flags()
-            self.highlighted_cell.is_start = True
+            self.canvas.delete(f"{self.highlighted_cell.id}-start")
+            if self.highlighted_cell.is_start:
+                # Remove start marker if it's already set
+                self.highlighted_cell.is_start = False
+            else:
+                # Set start marker
+                self.reset_start_end_flags()
+                self.highlighted_cell.is_start = True
             self.draw_grid()
 
     def set_end_cell(self):
         if self.highlighted_cell:
-            self.reset_start_end_flags()
-            self.highlighted_cell.is_end = True
+            self.canvas.delete(f"{self.highlighted_cell.id}-end")
+            if self.highlighted_cell.is_end:
+                # Remove end marker if it's already set
+                self.highlighted_cell.is_end = False
+            else:
+                # Set end marker
+                self.reset_start_end_flags()
+                self.highlighted_cell.is_end = True
             self.draw_grid()
 
     def place_number(self):
         if self.highlighted_cell:
-            number = simpledialog.askinteger("Input", "Enter cell number:", parent=self.master, minvalue=1, maxvalue=100)
-            if number is not None:
-                i, j = self.find_cell_coordinates(self.highlighted_cell)
-                self.highlighted_cell.number = number
-                self.update_cell_number(self.highlighted_cell, i, j)
+            self.canvas.delete(f"{self.highlighted_cell.id}-number")
+            if self.highlighted_cell.number is not None:
+                # Remove the number if it's already placed
+                self.highlighted_cell.number = None
+            else:
+                # Place a new number
+                number = simpledialog.askinteger("Input", "Enter cell number:", parent=self.master, minvalue=1, maxvalue=100)
+                if number is not None:
+                    self.highlighted_cell.number = number
+
+        # Update the grid with changes
+        i, j = self.find_cell_coordinates(self.highlighted_cell)
+        self.update_cell_number(self.highlighted_cell, i, j)
+        self.draw_grid()
 
     def update_cell_number(self, cell, i, j):
         # Calculate the center coordinates of the cell
