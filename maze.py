@@ -24,7 +24,6 @@ class Maze:
         self.grid_size_x = x
         self.grid_size_y = y
         
-        
     def reset_cells(self):
         self.cells = {(x, y): Cell(x, y) for x in range(self.grid_size_x) for y in range(self.grid_size_y)}
     

@@ -26,7 +26,7 @@ class MazeEditor:
         self.reset_button.pack(side=tk.LEFT)
 
         self.size_button = tk.Button(self.master, text="Set Grid Size", command=self.prompt_grid_size)
-        self.size_button.pack(side=tk.RIGHT)
+        self.size_button.pack(side=tk.LEFT)
         
         self.start_button = tk.Button(self.master, text="Set Start", command=self.set_start_cell)
         self.start_button.pack(side=tk.LEFT)
