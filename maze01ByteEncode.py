@@ -39,27 +39,41 @@ def writeMazeToFile():
     
     
 def readCellsFromBytes():
-    with open('maze01', 'rb') as mazeFile:
-        xByte = mazeFile.read(1)
-        yByte = mazeFile.read(1)
+    with open('maze01', 'rb') as maze_file:
+        grid_size_x_byte = maze_file.read(1)
+        grid_size_y_byte = maze_file.read(1)
         
-        xSize = int.from_bytes(xByte, "big")
-        ySize = int.from_bytes(yByte, "big")
+        grid_size_x = int.from_bytes(grid_size_x_byte, "big")
+        grid_size_y = int.from_bytes(grid_size_y_byte, "big")
+        
+        
+        start_cell_x_byte = maze_file.read(1)
+        start_cell_y_byte = maze_file.read(1)
+        
+        start_cell_x = int.from_bytes(start_cell_x_byte, "big")
+        start_cell_y = int.from_bytes(start_cell_y_byte, "big")
+        
+        
+        end_cell_x_byte = maze_file.read(1)
+        end_cell_y_byte = maze_file.read(1)
+        
+        end_cell_x = int.from_bytes(end_cell_x_byte, "big")
+        end_cell_y = int.from_bytes(end_cell_y_byte, "big")
         
         i = 0
-        rowNum = 1
-        while (byte := mazeFile.read(1)):
-            if i == 15:
+        row_num = 1
+        while (byte := maze_file.read(1)):
+            if i == grid_size_x:
                 i = 0
             if i == 0:
-                print(f'Row {rowNum}: ')
-                rowNum += 1
+                print(f'Row {row_num}: ')
+                row_num += 1
             byte_str = bin(int.from_bytes(byte, 'big'))[2:].rjust(8, '0')
             firstFour = byte_str[:4]
             lastFour = byte_str[4:]
             print(f'firstFour: {firstFour}, lastFour: {lastFour}')
             i += 1
-        return xSize, ySize
+        return grid_size_x, grid_size_y
 
 def main():
     writeMazeToFile()
