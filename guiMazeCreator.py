@@ -4,11 +4,16 @@ from tkinter import simpledialog
 class Cell:
     def __init__(self):
         # Each key represents a wall; True means the wall exists
-        self.walls = {'top': False, 'right': False, 'bottom': False, 'left': False}
+        self.walls = {'top': False, 'right': False, 'bottom': False, 'left': False}        
+        self.is_start = False
+        self.is_end = False
+        self.number = None
+        self.highlight_id = None  # Track the highlight rectangle ID
 
 class MazeEditor:
     def __init__(self, master):
         self.master = master
+        self.highlighted_cell = None  # Track the highlighted cell
         self.grid_size_x = 15  # Default grid size
         self.grid_size_y = 12  # Default grid size
         self.cell_size = 40  # Visual size of cells in pixels
@@ -33,6 +38,17 @@ class MazeEditor:
 
         self.size_button = tk.Button(self.master, text="Set Grid Size", command=self.prompt_grid_size)
         self.size_button.pack(side=tk.RIGHT)
+        
+        self.start_button = tk.Button(self.master, text="Set Start", command=self.set_start_cell)
+        self.start_button.pack(side=tk.LEFT)
+
+        self.end_button = tk.Button(self.master, text="Set End", command=self.set_end_cell)
+        self.end_button.pack(side=tk.LEFT)
+
+        self.number_button = tk.Button(self.master, text="Place Number", command=self.place_number)
+        self.number_button.pack(side=tk.LEFT)
+        
+        self.canvas.bind("<Button-3>", self.toggle_highlight)  # Right-click to highlight a cell
 
     def reset_grid(self):
         self.cells = {(x, y): Cell() for x in range(self.grid_size_x) for y in range(self.grid_size_y)}
@@ -59,11 +75,22 @@ class MazeEditor:
             for j in range(self.grid_size_y):
                 x1, y1 = i * self.cell_size, j * self.cell_size
                 self.draw_cell(i, j, x1, y1)
+                cell = self.cells[(i, j)]
+                if cell.highlight_id:
+                    # Redraw the highlight rectangle to ensure it's on top
+                    self.canvas.tag_raise(cell.highlight_id)
 
     def draw_cell(self, i, j, x1, y1):
         x2, y2 = x1 + self.cell_size, y1 + self.cell_size
         cell_id = self.canvas.create_rectangle(x1, y1, x2, y2, outline="light grey", tags=("cell", f"{i},{j}"))
         self.cells[(i, j)].id = cell_id
+        cell = self.cells[(i, j)]
+        if cell.is_start:
+            self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text="S", fill="green")
+        elif cell.is_end:
+            self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text="E", fill="red")
+        elif cell.number:
+            self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text=str(cell.number))
         self.update_cell_walls(i, j)
 
     def update_cell_walls(self, i, j):
@@ -127,6 +154,74 @@ class MazeEditor:
         self.update_cell_walls(i, j)
         if alsoUpdate['i'] != i or alsoUpdate['j'] != j:
             self.update_cell_walls(alsoUpdate['i'], alsoUpdate['j'])
+            
+    def toggle_highlight(self, event):
+        i, j = (event.x // self.cell_size, event.y // self.cell_size)
+        
+        if self.highlighted_cell and self.highlighted_cell == self.cells[(i, j)]:
+            # De-highlight the currently highlighted cell
+            self.canvas.delete(self.highlighted_cell.highlight_id)
+            self.highlighted_cell.highlight_id = None
+            self.highlighted_cell = None
+        else:
+            # Highlight a new cell
+            if self.highlighted_cell:
+                # Remove existing highlight
+                self.canvas.delete(self.highlighted_cell.highlight_id)
+                self.highlighted_cell.highlight_id = None
+
+            self.highlighted_cell = self.cells[(i, j)]
+
+            # Add new highlight
+            x1, y1 = i * self.cell_size, j * self.cell_size
+            x2, y2 = x1 + self.cell_size, y1 + self.cell_size
+            self.highlighted_cell.highlight_id = self.canvas.create_rectangle(x1, y1, x2, y2, outline="blue", width=2)
+
+    def set_start_cell(self):
+        if self.highlighted_cell:
+            self.reset_start_end_flags()
+            self.highlighted_cell.is_start = True
+            self.draw_grid()
+
+    def set_end_cell(self):
+        if self.highlighted_cell:
+            self.reset_start_end_flags()
+            self.highlighted_cell.is_end = True
+            self.draw_grid()
+
+    def place_number(self):
+        if self.highlighted_cell:
+            number = simpledialog.askinteger("Input", "Enter cell number:", parent=self.master, minvalue=1, maxvalue=100)
+            if number is not None:
+                i, j = self.find_cell_coordinates(self.highlighted_cell)
+                self.highlighted_cell.number = number
+                self.update_cell_number(self.highlighted_cell, i, j)
+
+    def update_cell_number(self, cell, i, j):
+        # Calculate the center coordinates of the cell
+        x_center = i * self.cell_size + self.cell_size // 2
+        y_center = j * self.cell_size + self.cell_size // 2
+
+        # Delete any existing number text
+        if hasattr(cell, 'number_id') and cell.number_id:
+            self.canvas.delete(cell.number_id)
+
+        # Create new text in the cell
+        cell.number_id = self.canvas.create_text(x_center, y_center, text=str(cell.number))
+
+    def reset_start_end_flags(self):
+        for cell in self.cells.values():
+            cell.is_start = False
+            cell.is_end = False
+        
+    def find_cell_coordinates(self, cell):
+        for i in range(self.grid_size_x):
+            for j in range(self.grid_size_y):
+                if self.cells[(i, j)] == cell:
+                    return i, j
+        return None, None  # Just in case the cell is not found
+
+
 
 def main():
     root = tk.Tk()
