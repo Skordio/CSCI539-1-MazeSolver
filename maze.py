@@ -1,6 +1,12 @@
 from enum import Enum
 from typing import Literal
 
+class Solution:
+    path: list[tuple[int, int]]
+
+    def __init__(self):
+        self.path = []
+
 class Cell:
     def __init__(self, x, y):
         self.x = x
@@ -10,11 +16,30 @@ class Cell:
         self.is_end = False
         self.number = None
 
+    def get_key(self):
+        return (self.x, self.y)
+    
+    def legal_neighbors(self, maze, last_seen_number=0):
+        neighbors = []
+        # implement check for last_seen_number
+        if not self.walls['top'] and self.y > 0:
+            neighbors.append(maze.cells[(self.x, self.y - 1)])
+        if not self.walls['right'] and self.x < maze.grid_size_x - 1:
+            neighbors.append(maze.cells[(self.x + 1, self.y)])
+        if not self.walls['bottom'] and self.y < maze.grid_size_y - 1:
+            neighbors.append(maze.cells[(self.x, self.y + 1)])
+        if not self.walls['left'] and self.x > 0:
+            neighbors.append(maze.cells[(self.x - 1, self.y)])
+        return neighbors
+
 
 class Maze:
     grid_size_x: int
     grid_size_y: int
     cells: dict[tuple[int, int], Cell]
+    start_cell: Cell
+    end_cell: Cell
+    numbers: list[int]
     
     def __init__(self, grid_size_x=15, grid_size_y=12):
         self.set_grid_size(grid_size_x, grid_size_y)
@@ -26,7 +51,21 @@ class Maze:
         
     def reset_cells(self):
         self.cells = {(x, y): Cell(x, y) for x in range(self.grid_size_x) for y in range(self.grid_size_y)}
-    
+        self.start_cell = None
+        self.end_cell = None
+
+    def set_start(self, x, y):
+        if self.start_cell is not None:
+            self.start_cell.is_start = False
+        self.start_cell = self.cells[(x, y)]
+        self.start_cell.is_start = True
+
+    def set_end(self, x, y):
+        if self.end_cell is not None:
+            self.end_cell.is_end = False
+        self.end_cell = self.cells[(x, y)]
+        self.end_cell.is_end = True
+
     def load_from_file(self, filename):
         with open(filename, 'rb') as maze_file:
             grid_size_x_byte = maze_file.read(1)
@@ -75,8 +114,13 @@ class Maze:
                 if x == 0:
                     y += 1
                 
-            self.cells[(start_cell_x, start_cell_y)].is_start = True
-            self.cells[(end_cell_x, end_cell_y)].is_end = True
+            self.set_start(start_cell_x, start_cell_y)
+            self.set_end(end_cell_x, end_cell_y)
+
+            for cell in self.cells.values():
+                if cell.number is not None:
+                    self.numbers.append(cell.number)
+            self.numbers.sort()
             
     def save_to_file(self, filename):
         with open(filename, 'wb') as maze_file:
@@ -120,3 +164,20 @@ class Maze:
                         byte += '0000'
                     
                     maze_file.write(int(byte, base=2).to_bytes(1, 'big'))
+
+    def solve_dfs(self):
+        solution = Solution()
+        traversed_path = set()
+        last_seen_number = 0
+        stack = [self.start_cell]
+        while stack:
+            current = stack.pop()
+            # check if we are able to go to this cell
+            if current in traversed_path:
+                continue
+            traversed_path.add(current)
+            if current.is_end:
+                return solution
+            for neighbor in current.legal_neighbors(self):
+                stack.append(neighbor)
+        return solution
