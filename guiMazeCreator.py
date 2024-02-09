@@ -8,7 +8,7 @@ class MazeEditor:
     def __init__(self, master, load_from_file=None):
         self.master = master
         self.highlighted_cell = None
-        self.cell_size = 40  # Visual size of cells in pixels
+        self.cell_size = 55  # Visual size of cells in pixels
         self.solved = False
         
         self.maze = Maze(15, 12)
@@ -127,11 +127,11 @@ class MazeEditor:
         self.maze.cells[(i, j)].id = cell_id
         cell = self.maze.cells[(i, j)]
         if cell.is_start:
-            self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text="S", fill="green", tags=(f"{cell.id}-start"))
+            self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text="S", fill="green", font=('Arial', self.cell_size//2), tags=(f"{cell.id}-start"))
         elif cell.is_end:
-            self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text="E", fill="red", tags=(f"{cell.id}-end"))
+            self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text="E", fill="red", font=('Arial', self.cell_size//2), tags=(f"{cell.id}-end"))
         elif cell.number is not None:
-            self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text=str(cell.number), tags=(f"{cell.id}-number"))
+            self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text=str(cell.number), font=('Arial', self.cell_size//2), tags=(f"{cell.id}-number"))
         self.update_cell_walls(i, j)
 
     def update_cell_walls(self, i, j):
@@ -290,9 +290,6 @@ class MazeEditor:
 
         # Convert grid cell coordinates to canvas coordinates (centers of cells)
         canvas_path = [(x * self.cell_size + self.cell_size / 2, y * self.cell_size + self.cell_size / 2) for x, y in path]
-
-        # Flatten the list of tuples for the create_line method
-        flat_canvas_path = [coord for point in canvas_path for coord in point]
         
         # Draw the solution path slowly
         for i in range(len(canvas_path) - 1):

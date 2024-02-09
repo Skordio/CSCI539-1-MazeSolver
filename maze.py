@@ -38,7 +38,7 @@ class Cell:
             if neighbors[i] in traversed_path:
                 remove = True
 
-            if last_seen_number is not None:
+            if last_seen_number is not None and maze.numbers:
                 if neighbors[i].number is not None and neighbors[i].number != last_seen_number+1:
                     remove = True
                 if neighbors[i].is_end and last_seen_number != maze.numbers[-1]:
@@ -107,7 +107,7 @@ class Maze:
         self.end_cell.is_end = True
 
     def load_from_file(self, filename):
-        with open(filename, 'rb') as maze_file:
+        with open(f'mazes\{filename}', 'rb') as maze_file:
             grid_size_x_byte = maze_file.read(1)
             grid_size_y_byte = maze_file.read(1)
             
@@ -163,7 +163,7 @@ class Maze:
             self.numbers.sort()
             
     def save_to_file(self, filename):
-        with open(filename, 'wb') as maze_file:
+        with open(f'mazes\{filename}', 'wb') as maze_file:
             maze_file.write(int(self.grid_size_x).to_bytes(1, 'big'))
             maze_file.write(int(self.grid_size_y).to_bytes(1, 'big'))
                     
@@ -210,7 +210,7 @@ class Maze:
         last_seen_number = 0
         stack = [(None, self.start_cell)]
         while stack:
-            from_cell, current_cell = stack.pop()
+            current_cell = stack.pop()[1]
             traversed.path.append(current_cell)
             last_seen_number = current_cell.number if current_cell.number is not None else last_seen_number
             # if we are at the end, we have the solution
@@ -229,7 +229,7 @@ class Maze:
                     if removing_cell.number is not None:
                         last_seen_number = removing_cell.number - 1
             
-            return traversed
+        return traversed
     
     def solve_bfs(self):
         possible_solutions = [Path([self.start_cell])]
