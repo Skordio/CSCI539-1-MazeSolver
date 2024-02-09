@@ -16,7 +16,7 @@ class Cell:
         return str(self.coords())
     
     def __repr__(self):
-        return str(self.coords())
+        return self.__str__()
 
     def get_key(self):
         return (self.x, self.y)
@@ -66,7 +66,7 @@ class Path:
         return str(self.path_coords())
     
     def __repr__(self):
-        return str(self.path_coords())
+        return self.__str__()
 
     def path_coords(self):
         return [cell.coords() for cell in self.path]

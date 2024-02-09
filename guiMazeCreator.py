@@ -1,19 +1,24 @@
 import tkinter as tk
 from tkinter import simpledialog
+from argparse import ArgumentParser
 
 from maze import Cell, Maze
 
 class MazeEditor:
-    def __init__(self, master):
+    def __init__(self, master, load_from_file=None):
         self.master = master
         self.highlighted_cell = None
         self.cell_size = 40  # Visual size of cells in pixels
+        self.solved = False
         
         self.maze = Maze(15, 12)
         
         self.create_widgets()
         self.reset_grid()
         self.resize_grid(self.maze.grid_size_x, self.maze.grid_size_y)
+
+        if load_from_file:
+            self.load_from_file(load_from_file)
 
     def create_widgets(self):
         self.frame = tk.Frame(self.master, bd=0, highlightbackground="black", highlightthickness=1)
@@ -36,11 +41,17 @@ class MazeEditor:
 
         self.number_button = tk.Button(self.master, text="Place Number", command=self.place_number)
         self.number_button.pack(side=tk.LEFT)
+
+        self.number_button = tk.Button(self.master, text="Solve DFS", command=self.solve_dfs)
+        self.number_button.pack(side=tk.LEFT)
+
+        self.number_button = tk.Button(self.master, text="Solve BFS", command=self.solve_bfs)
+        self.number_button.pack(side=tk.LEFT)
         
         self.save_to_file_button = tk.Button(self.master, text="Save to File", command=self.save_to_file_prompt)
         self.save_to_file_button.pack(side=tk.RIGHT)
         
-        self.load_from_file_button = tk.Button(self.master, text="Load from File", command=self.load_from_file_prompt)
+        self.load_from_file_button = tk.Button(self.master, text="Load from File", command=self.load_from_file)
         self.load_from_file_button.pack(side=tk.RIGHT)
         
         self.canvas.bind("<Button-3>", self.toggle_highlight)  # Right-click to highlight a cell
@@ -65,8 +76,9 @@ class MazeEditor:
         if filename:
             self.maze.save_to_file(filename)
             
-    def load_from_file_prompt(self):
-        filename = simpledialog.askstring("Input", "Enter file name:", parent=self.master)
+    def load_from_file(self, filename=None):
+        if not filename:
+            filename = simpledialog.askstring("Input", "Enter file name:", parent=self.master)
         if filename:
             self.maze.load_from_file(filename)
             for cell in self.maze.cells.values():
@@ -222,12 +234,60 @@ class MazeEditor:
                 if self.maze.cells[(i, j)] == cell:
                     return i, j
         return None, None 
+    
+    def solve_dfs(self):
+        if self.solved:
+            self.canvas.delete("solution_path")
+            self.solved = False
+        else:
+            solution = self.maze.solve_dfs()
+            if solution:
+                self.draw_solution(solution.path_coords())
+                self.solved = True
+            else:
+                print("No solution found")
+    
+    def solve_bfs(self):
+        if self.solved:
+            self.canvas.delete("solution_path")
+            self.solved = False
+        else:
+            solution = self.maze.solve_bfs()
+            if solution:
+                self.draw_solution(solution.path_coords())
+                self.solved = True
+            else:
+                print("No solution found")
 
+    def draw_solution(self, path):
+        # Check if the path is empty
+        if not path:
+            return
+
+        # Convert grid cell coordinates to canvas coordinates (centers of cells)
+        canvas_path = [(x * self.cell_size + self.cell_size / 2, y * self.cell_size + self.cell_size / 2) for x, y in path]
+
+        # Flatten the list of tuples for the create_line method
+        flat_canvas_path = [coord for point in canvas_path for coord in point]
+        
+        # Draw the solution path slowly
+        for i in range(len(canvas_path) - 1):
+            self.canvas.create_line(canvas_path[i], canvas_path[i + 1], fill="blue", width=2, tags="solution_path")
+            self.canvas.update()
+            self.canvas.after(100)
+
+parser = ArgumentParser(
+                prog='guiMazeCreator.py',
+                description='Edits, saves, and solves mazes')
+
+parser.add_argument('-f','--filename', required=False, help='The filename of the maze to load from') 
+
+args = parser.parse_args()
 
 def main():
     root = tk.Tk()
     root.title("Maze Editor")
-    app = MazeEditor(root)
+    app = MazeEditor(root, args.filename if args.filename else None)
     root.mainloop()
 
 if __name__ == "__main__":
