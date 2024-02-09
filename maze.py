@@ -21,21 +21,21 @@ class Cell:
     def get_key(self):
         return (self.x, self.y)
     
-    def legal_neighbors(self, maze, traversed_path=[], last_seen_number=None, attempted_turns=[]):
+    def legal_neighbors(self, maze, traversed_path=[], last_seen_number=None):
         neighbors = []
-        if not self.walls['left'] and self.x > 0:
-            neighbors.append(maze.cells[(self.x - 1, self.y)])
-        if not self.walls['bottom'] and self.y < maze.grid_size_y - 1:
-            neighbors.append(maze.cells[(self.x, self.y + 1)])
-        if not self.walls['right'] and self.x < maze.grid_size_x - 1:
-            neighbors.append(maze.cells[(self.x + 1, self.y)])
         if not self.walls['top'] and self.y > 0:
             neighbors.append(maze.cells[(self.x, self.y - 1)])
+        if not self.walls['right'] and self.x < maze.grid_size_x - 1:
+            neighbors.append(maze.cells[(self.x + 1, self.y)])
+        if not self.walls['bottom'] and self.y < maze.grid_size_y - 1:
+            neighbors.append(maze.cells[(self.x, self.y + 1)])
+        if not self.walls['left'] and self.x > 0:
+            neighbors.append(maze.cells[(self.x - 1, self.y)])
 
         i = len(neighbors) - 1
         while i >= 0:
             remove = False
-            if neighbors[i].coords() in traversed_path:
+            if neighbors[i] in traversed_path:
                 remove = True
 
             if last_seen_number is not None:
@@ -208,29 +208,28 @@ class Maze:
     def solve_dfs(self):
         traversed = Path(path=[], last_seen_number=0)
         last_seen_number = 0
-        stack = [self.start_cell]
+        stack = [(None, self.start_cell)]
         while stack:
-            current = stack.pop()
-            traversed.path.append(current)
-            last_seen_number = current.number if current.number is not None else last_seen_number
+            from_cell, current_cell = stack.pop()
+            traversed.path.append(current_cell)
+            last_seen_number = current_cell.number if current_cell.number is not None else last_seen_number
             # if we are at the end, we have the solution
-            if current.is_end:
+            if current_cell.is_end:
                 break
             # check for legal neighbors
-            legal_neighbors = current.legal_neighbors(self, traversed.path_coords(), last_seen_number)
+            legal_neighbors = current_cell.legal_neighbors(self, traversed.path, last_seen_number)
             # if there are legal neighbors, add them to the stack
             if legal_neighbors:
                 for neighbor in legal_neighbors:
-                    stack.append(neighbor)
+                    stack.append((current_cell, neighbor))
             # if there aren't any legal neighbors, we need to correct the traversed path to match the next cell on the stack
-            else:
-                legal_neighbors = stack[-1].legal_neighbors(self)
-                while legal_neighbors and traversed.path and traversed.path[-1] not in legal_neighbors:
+            elif stack:
+                while traversed.path and stack[-1][0] != traversed.path[-1]:
                     removing_cell = traversed.path.pop()
                     if removing_cell.number is not None:
                         last_seen_number = removing_cell.number - 1
-        
-        return traversed
+            
+            return traversed
     
     def solve_bfs(self):
         possible_solutions = [Path([self.start_cell])]
@@ -245,7 +244,7 @@ class Maze:
                 if current.is_end:
                     return solution
                 # for each legal neighbor of the last cell, create a new path and create a new list of possible solutions for the next iteration
-                for neighbor in current.legal_neighbors(self, solution.path_coords(), solution.last_seen_number):
+                for neighbor in current.legal_neighbors(self, solution.path, solution.last_seen_number):
                     new_path = Path(solution.path + [neighbor], neighbor.number if neighbor.number is not None else solution.last_seen_number)
                     new_solutions.append(new_path)
             # set the list of possible solutions to the list of new solutions
