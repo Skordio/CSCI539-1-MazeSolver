@@ -3,17 +3,6 @@ import time
 from typing import Literal, List, Dict, Tuple
 from collections import deque
 
-class Solution:
-    path: list[tuple[int, int]]
-    last_seen_number: int
-
-    def __init__(self, path=[], last_seen_number=0):
-        self.path = path
-        self.last_seen_number = last_seen_number
-
-    def path_coords(self):
-        return [cell.coords() for cell in self.path]
-
 class Cell:
     def __init__(self, x, y):
         self.x = x
@@ -24,7 +13,7 @@ class Cell:
         self.number = None
 
     def __str__(self):
-        return self.coords()
+        return str(self.coords())
 
     def get_key(self):
         return (self.x, self.y)
@@ -61,6 +50,23 @@ class Cell:
     
     def coords(self):
         return (self.x, self.y)
+
+class Path:
+    path: list[Cell]
+    last_seen_number: int
+
+    def __init__(self, path=[], last_seen_number=0):
+        self.path = path
+        self.last_seen_number = last_seen_number
+
+    def __str__(self):
+        return str(self.path_coords())
+    
+    def __repr__(self):
+        return str(self.path_coords())
+
+    def path_coords(self):
+        return [cell.coords() for cell in self.path]
 
 
 class Maze:
@@ -198,23 +204,22 @@ class Maze:
 
     def solve_dfs(self):
         with open('solver_outut.txt', 'w') as f:
-            solution = Solution()
-            traversed_path: list[tuple[int,int]] = []
+            traversed = Path(path=[], last_seen_number=0)
             last_seen_number = 0
             stack = [self.start_cell]
             while stack:
                 current = stack.pop()
-                traversed_path.append(current.coords())
+                traversed.path.append(current)
                 f.write('---\n')
                 f.write(f'last_seen_number: {last_seen_number}\n')
                 f.write(f"Current: {current.coords()}\n")
-                f.write(f"Traversed Path: {traversed_path}\n")
+                f.write(f"Traversed Path: {traversed}\n")
                 last_seen_number = current.number if current.number is not None else last_seen_number
                 # if we are at the end, we have the solution
                 if current.is_end:
                     break
                 # check for legal neighbors
-                legal_neighbors = current.legal_neighbors(self, traversed_path, last_seen_number)
+                legal_neighbors = current.legal_neighbors(self, traversed.path_coords(), last_seen_number)
                 legal_neighbor_cells = [neighbor.coords() for neighbor in legal_neighbors] if legal_neighbors else []
                 f.write(f"Legal Neighbors: {legal_neighbor_cells}\n")
                 # if there are legal neighbors, add them to the stack
@@ -223,18 +228,17 @@ class Maze:
                         stack.append(neighbor)
                 # if there aren't any legal neighbors, we need to correct the traversed path to match the next cell on the stack
                 else:
-                    legal_neighbor_cells = [neighbor.coords() for neighbor in stack[-1].legal_neighbors(self)] if stack else []
-                    while legal_neighbor_cells and traversed_path and traversed_path[-1] not in legal_neighbor_cells:
-                        removing_cell = traversed_path.pop()
-                        
-                        f.write(f"Removing {removing_cell} for {stack[-1].coords()}\n")
-                        if self.cells[removing_cell].number is not None:
-                            last_seen_number = self.cells[removing_cell].number - 1
-            solution.path = [self.cells[coords] for coords in traversed_path]
-            return solution
+                    legal_neighbors = stack[-1].legal_neighbors(self)
+                    while legal_neighbors and traversed.path and traversed.path[-1] not in legal_neighbors:
+                        removing_cell = traversed.path.pop()
+                        f.write(f"Removing {removing_cell.coords()} for {stack[-1].coords()}\n")
+                        if removing_cell.number is not None:
+                            last_seen_number = removing_cell.number - 1
+            
+            return traversed
     
     def solve_bfs(self):
-        possible_solutions = [Solution([self.start_cell])]
+        possible_solutions = [Path([self.start_cell])]
         new_solutions = []
 
         while possible_solutions:
@@ -243,9 +247,9 @@ class Maze:
                 if current.is_end:
                     return solution
                 for neighbor in current.legal_neighbors(self, solution.path_coords(), solution.last_seen_number):
-                    new_path = Solution(solution.path + [neighbor], neighbor.number if neighbor.number is not None else solution.last_seen_number)
+                    new_path = Path(solution.path + [neighbor], neighbor.number if neighbor.number is not None else solution.last_seen_number)
                     new_solutions.append(new_path)
             possible_solutions = new_solutions
             new_solutions = []
 
-        return Solution()
+        return Path()
