@@ -210,18 +210,12 @@ class Maze:
             while stack:
                 current = stack.pop()
                 traversed.path.append(current)
-                f.write('---\n')
-                f.write(f'last_seen_number: {last_seen_number}\n')
-                f.write(f"Current: {current.coords()}\n")
-                f.write(f"Traversed Path: {traversed}\n")
                 last_seen_number = current.number if current.number is not None else last_seen_number
                 # if we are at the end, we have the solution
                 if current.is_end:
                     break
                 # check for legal neighbors
                 legal_neighbors = current.legal_neighbors(self, traversed.path_coords(), last_seen_number)
-                legal_neighbor_cells = [neighbor.coords() for neighbor in legal_neighbors] if legal_neighbors else []
-                f.write(f"Legal Neighbors: {legal_neighbor_cells}\n")
                 # if there are legal neighbors, add them to the stack
                 if legal_neighbors:
                     for neighbor in legal_neighbors:
@@ -231,7 +225,6 @@ class Maze:
                     legal_neighbors = stack[-1].legal_neighbors(self)
                     while legal_neighbors and traversed.path and traversed.path[-1] not in legal_neighbors:
                         removing_cell = traversed.path.pop()
-                        f.write(f"Removing {removing_cell.coords()} for {stack[-1].coords()}\n")
                         if removing_cell.number is not None:
                             last_seen_number = removing_cell.number - 1
             
