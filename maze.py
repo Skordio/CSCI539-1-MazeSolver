@@ -191,38 +191,39 @@ class Maze:
                     maze_file.write(int(byte, base=2).to_bytes(1, 'big'))
 
     def solve_dfs(self):
-        solution = Solution()
-        traversed_path: list[tuple[int,int]] = []
-        last_seen_number = 0
-        stack = [self.start_cell]
-        while stack:
-            current = stack.pop()
-            traversed_path.append(current.coords())
-            # print('---')
-            # print('last_seen_number:', last_seen_number)
-            # print(f"Current: {current.coords()}")
-            # print(f"Traversed Path: {traversed_path}")
-            last_seen_number = current.number if current.number is not None else last_seen_number
-            # if we are at the end, we have the solution
-            if current.is_end:
-                break
-            # check for legal neighbors
-            legal_neighbors = current.legal_neighbors(self, traversed_path, last_seen_number)
-            legal_neighbor_cells = [neighbor.coords() for neighbor in legal_neighbors] if legal_neighbors else []
-            # print(f"Legal Neighbors: {legal_neighbor_cells}")
-            # if there are legal neighbors, add them to the stack
-            if legal_neighbors:
-                for neighbor in legal_neighbors:
-                    stack.append(neighbor)
-            # if there aren't any legal neighbors, we need to correct the traversed path to match the next cell on the stack
-            else:
-                legal_neighbor_cells = [neighbor.coords() for neighbor in stack[-1].legal_neighbors(self)] if stack else []
-                while legal_neighbor_cells and traversed_path and traversed_path[-1] not in legal_neighbor_cells:
-                    removing_cell = traversed_path.pop()
-                    
-                    # print(f"Removing {removing_cell} for {stack[-1].coords()}")
-                    if self.cells[removing_cell].number is not None:
-                        last_seen_number = self.cells[removing_cell].number - 1
-            # time.sleep(0.5)
-        solution.path = traversed_path
-        return solution
+        with open('solver_outut.txt', 'w') as f:
+            solution = Solution()
+            traversed_path: list[tuple[int,int]] = []
+            last_seen_number = 0
+            stack = [self.start_cell]
+            while stack:
+                current = stack.pop()
+                traversed_path.append(current.coords())
+                f.write('---\n')
+                f.write(f'last_seen_number: {last_seen_number}\n')
+                f.write(f"Current: {current.coords()}\n")
+                f.write(f"Traversed Path: {traversed_path}\n")
+                last_seen_number = current.number if current.number is not None else last_seen_number
+                # if we are at the end, we have the solution
+                if current.is_end:
+                    break
+                # check for legal neighbors
+                legal_neighbors = current.legal_neighbors(self, traversed_path, last_seen_number)
+                legal_neighbor_cells = [neighbor.coords() for neighbor in legal_neighbors] if legal_neighbors else []
+                f.write(f"Legal Neighbors: {legal_neighbor_cells}\n")
+                # if there are legal neighbors, add them to the stack
+                if legal_neighbors:
+                    legal_neighbors.reverse()
+                    for neighbor in legal_neighbors:
+                        stack.append(neighbor)
+                # if there aren't any legal neighbors, we need to correct the traversed path to match the next cell on the stack
+                else:
+                    legal_neighbor_cells = [neighbor.coords() for neighbor in stack[-1].legal_neighbors(self)] if stack else []
+                    while legal_neighbor_cells and traversed_path and traversed_path[-1] not in legal_neighbor_cells:
+                        removing_cell = traversed_path.pop()
+                        
+                        f.write(f"Removing {removing_cell} for {stack[-1].coords()}\n")
+                        if self.cells[removing_cell].number is not None:
+                            last_seen_number = self.cells[removing_cell].number - 1
+            solution.path = traversed_path
+            return solution
