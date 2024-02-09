@@ -1,12 +1,18 @@
 from enum import Enum
 import time
 from typing import Literal, List, Dict, Tuple
+from collections import deque
 
 class Solution:
     path: list[tuple[int, int]]
+    last_seen_number: int
 
-    def __init__(self):
-        self.path = []
+    def __init__(self, path=[], last_seen_number=0):
+        self.path = path
+        self.last_seen_number = last_seen_number
+
+    def path_coords(self):
+        return [cell.coords() for cell in self.path]
 
 class Cell:
     def __init__(self, x, y):
@@ -25,14 +31,14 @@ class Cell:
     
     def legal_neighbors(self, maze, traversed_path=[], last_seen_number=None, attempted_turns=[]):
         neighbors = []
-        if not self.walls['top'] and self.y > 0:
-            neighbors.append(maze.cells[(self.x, self.y - 1)])
-        if not self.walls['right'] and self.x < maze.grid_size_x - 1:
-            neighbors.append(maze.cells[(self.x + 1, self.y)])
-        if not self.walls['bottom'] and self.y < maze.grid_size_y - 1:
-            neighbors.append(maze.cells[(self.x, self.y + 1)])
         if not self.walls['left'] and self.x > 0:
             neighbors.append(maze.cells[(self.x - 1, self.y)])
+        if not self.walls['bottom'] and self.y < maze.grid_size_y - 1:
+            neighbors.append(maze.cells[(self.x, self.y + 1)])
+        if not self.walls['right'] and self.x < maze.grid_size_x - 1:
+            neighbors.append(maze.cells[(self.x + 1, self.y)])
+        if not self.walls['top'] and self.y > 0:
+            neighbors.append(maze.cells[(self.x, self.y - 1)])
 
         i = len(neighbors) - 1
         while i >= 0:
@@ -213,7 +219,6 @@ class Maze:
                 f.write(f"Legal Neighbors: {legal_neighbor_cells}\n")
                 # if there are legal neighbors, add them to the stack
                 if legal_neighbors:
-                    legal_neighbors.reverse()
                     for neighbor in legal_neighbors:
                         stack.append(neighbor)
                 # if there aren't any legal neighbors, we need to correct the traversed path to match the next cell on the stack
@@ -227,3 +232,45 @@ class Maze:
                             last_seen_number = self.cells[removing_cell].number - 1
             solution.path = traversed_path
             return solution
+        
+    def solve_bfs(self):
+        solution = Solution()
+        traversed_path = []
+        last_seen_number = 0
+        queue = [self.start_cell]
+        while queue:
+            current = queue.pop(0)
+            traversed_path.append(current.coords())
+            last_seen_number = current.number if current.number is not None else last_seen_number
+            # if we are at the end, we have the solution
+            if current.is_end:
+                break
+            # check for legal neighbors
+            legal_neighbors = current.legal_neighbors(self, traversed_path, last_seen_number)
+            # if there are legal neighbors, add them to the stack
+            if legal_neighbors:
+                for neighbor in legal_neighbors:
+                    queue.append(neighbor)
+            # if there aren't any legal neighbors, we need to correct the traversed path to match the next cell on the stack
+            else:
+                while traversed_path and traversed_path[-1] not in [neighbor.coords() for neighbor in queue]:
+                    traversed_path.pop()
+        solution.path = traversed_path
+        return solution
+    
+    def solve_bfs(self):
+        possible_solutions = [Solution([self.start_cell])]
+        new_solutions = []
+
+        while possible_solutions:
+            for solution in possible_solutions:
+                current = solution.path[-1]
+                if current.is_end:
+                    return solution
+                for neighbor in current.legal_neighbors(self, solution.path_coords(), solution.last_seen_number):
+                    new_path = Solution(solution.path + [neighbor], neighbor.number if neighbor.number is not None else solution.last_seen_number)
+                    new_solutions.append(new_path)
+            possible_solutions = new_solutions
+            new_solutions = []
+
+        return Solution()
