@@ -230,33 +230,8 @@ class Maze:
                         f.write(f"Removing {removing_cell} for {stack[-1].coords()}\n")
                         if self.cells[removing_cell].number is not None:
                             last_seen_number = self.cells[removing_cell].number - 1
-            solution.path = traversed_path
+            solution.path = [self.cells[coords] for coords in traversed_path]
             return solution
-        
-    def solve_bfs(self):
-        solution = Solution()
-        traversed_path = []
-        last_seen_number = 0
-        queue = [self.start_cell]
-        while queue:
-            current = queue.pop(0)
-            traversed_path.append(current.coords())
-            last_seen_number = current.number if current.number is not None else last_seen_number
-            # if we are at the end, we have the solution
-            if current.is_end:
-                break
-            # check for legal neighbors
-            legal_neighbors = current.legal_neighbors(self, traversed_path, last_seen_number)
-            # if there are legal neighbors, add them to the stack
-            if legal_neighbors:
-                for neighbor in legal_neighbors:
-                    queue.append(neighbor)
-            # if there aren't any legal neighbors, we need to correct the traversed path to match the next cell on the stack
-            else:
-                while traversed_path and traversed_path[-1] not in [neighbor.coords() for neighbor in queue]:
-                    traversed_path.pop()
-        solution.path = traversed_path
-        return solution
     
     def solve_bfs(self):
         possible_solutions = [Solution([self.start_cell])]
