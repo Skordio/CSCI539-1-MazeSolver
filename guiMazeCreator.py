@@ -22,36 +22,47 @@ class MazeEditor:
 
     def create_widgets(self):
         self.frame = tk.Frame(self.master, bd=0, highlightbackground="black", highlightthickness=1)
-        self.frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=20, pady=20, ipadx=5, ipady=0)
+        self.frame.pack(side=tk.TOP, fill='none', expand=False, padx=20, pady=20, ipadx=0, ipady=0)
 
         self.canvas = tk.Canvas(self.frame)
-        self.canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True,)
+        self.canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True, anchor=tk.CENTER)
 
-        self.reset_button = tk.Button(self.master, text="Reset", command=self.reset_grid)
+        # First row of buttons
+        self.button_frame1 = tk.Frame(self.master)
+        self.button_frame1.pack(side=tk.TOP, fill=tk.X, padx=20, pady=(10, 0))
+        
+        self.reset_button = tk.Button(self.button_frame1, text="Reset", command=self.reset_grid)
         self.reset_button.pack(side=tk.LEFT)
 
-        self.size_button = tk.Button(self.master, text="Set Grid Size", command=self.prompt_grid_size)
+        self.size_button = tk.Button(self.button_frame1, text="Set Grid Size", command=self.prompt_grid_size)
         self.size_button.pack(side=tk.LEFT)
         
-        self.start_button = tk.Button(self.master, text="Set Start", command=self.set_start_cell)
+        self.start_button = tk.Button(self.button_frame1, text="Set Start", command=self.set_start_cell)
         self.start_button.pack(side=tk.LEFT)
 
-        self.end_button = tk.Button(self.master, text="Set End", command=self.set_end_cell)
+        self.end_button = tk.Button(self.button_frame1, text="Set End", command=self.set_end_cell)
         self.end_button.pack(side=tk.LEFT)
 
-        self.number_button = tk.Button(self.master, text="Place Number", command=self.place_number)
+        self.number_button = tk.Button(self.button_frame1, text="Place Number", command=self.place_number)
         self.number_button.pack(side=tk.LEFT)
 
-        self.number_button = tk.Button(self.master, text="Solve DFS", command=self.solve_dfs)
+        # Second row of buttons
+        self.button_frame2 = tk.Frame(self.master)
+        self.button_frame2.pack(side=tk.TOP, fill=tk.X, padx=20)
+
+        self.number_button = tk.Button(self.button_frame2, text="Solve DFS", command=self.solve_dfs)
         self.number_button.pack(side=tk.LEFT)
 
-        self.number_button = tk.Button(self.master, text="Solve BFS", command=self.solve_bfs)
+        self.number_button = tk.Button(self.button_frame2, text="Solve BFS", command=self.solve_bfs)
+        self.number_button.pack(side=tk.LEFT)
+
+        self.number_button = tk.Button(self.button_frame2, text="Remove Solution", command=self.remove_solution)
         self.number_button.pack(side=tk.LEFT)
         
-        self.save_to_file_button = tk.Button(self.master, text="Save to File", command=self.save_to_file_prompt)
+        self.save_to_file_button = tk.Button(self.button_frame2, text="Save to File", command=self.save_to_file_prompt)
         self.save_to_file_button.pack(side=tk.RIGHT)
         
-        self.load_from_file_button = tk.Button(self.master, text="Load from File", command=self.load_from_file)
+        self.load_from_file_button = tk.Button(self.button_frame2, text="Load from File", command=self.load_from_file)
         self.load_from_file_button.pack(side=tk.RIGHT)
         
         self.canvas.bind("<Button-3>", self.toggle_highlight)  # Right-click to highlight a cell
@@ -81,9 +92,11 @@ class MazeEditor:
             filename = simpledialog.askstring("Input", "Enter file name:", parent=self.master)
         if filename:
             self.maze.load_from_file(filename)
+            self.resize_grid(self.maze.grid_size_x, self.maze.grid_size_y)
+            self.maze.load_from_file(filename)
+
             for cell in self.maze.cells.values():
                 cell.highlight_rect = None
-            self.resize_grid(self.maze.grid_size_x, self.maze.grid_size_y)
             self.draw_grid()
 
     def resize_grid(self, sizeX, sizeY):
@@ -92,8 +105,12 @@ class MazeEditor:
         canvas_width = self.cell_size * self.maze.grid_size_x
         canvas_height = self.cell_size * self.maze.grid_size_y
         self.canvas.config(width=canvas_width, height=canvas_height)
-        self.master.geometry(f"{canvas_width+40}x{canvas_height+70}")
-        self.draw_grid()
+        if canvas_width+40 < 500:
+            width = 500
+        else:
+            width = canvas_width+40
+        self.master.geometry(f"{width}x{canvas_height+115}")
+        self.reset_grid()
 
     def draw_grid(self):
         for i in range(self.maze.grid_size_x):
@@ -198,11 +215,13 @@ class MazeEditor:
             if self.highlighted_cell.is_start:
                 self.canvas.delete(f"{self.highlighted_cell.id}-start")
                 self.highlighted_cell.is_start = False
+                self.maze.start_cell = None
             else:
                 for cell in self.maze.cells.values():
                     self.canvas.delete(f"{cell.id}-start")
                     cell.is_start = False
                 self.highlighted_cell.is_start = True
+                self.maze.start_cell = self.highlighted_cell
             self.draw_grid()
 
     def set_end_cell(self):
@@ -210,11 +229,13 @@ class MazeEditor:
             if self.highlighted_cell.is_end:
                 self.canvas.delete(f"{self.highlighted_cell.id}-end")
                 self.highlighted_cell.is_end = False
+                self.maze.end_cell = None
             else:
                 for cell in self.maze.cells.values():
                     self.canvas.delete(f"{cell.id}-end")
                     cell.is_end = False
                 self.highlighted_cell.is_end = True
+                self.maze.end_cell = self.highlighted_cell
             self.draw_grid()
 
     def place_number(self):
@@ -226,6 +247,7 @@ class MazeEditor:
                 number = simpledialog.askinteger("Input", "Enter cell number:", parent=self.master, minvalue=1, maxvalue=100)
                 if number is not None:
                     self.highlighted_cell.number = number
+                    self.maze.numbers.append(number)
             self.draw_grid()
         
     def find_cell_coordinates(self, cell):
@@ -237,8 +259,7 @@ class MazeEditor:
     
     def solve_dfs(self):
         if self.solved:
-            self.canvas.delete("solution_path")
-            self.solved = False
+            self.remove_solution()
         else:
             solution = self.maze.solve_dfs()
             if solution:
@@ -249,8 +270,7 @@ class MazeEditor:
     
     def solve_bfs(self):
         if self.solved:
-            self.canvas.delete("solution_path")
-            self.solved = False
+            self.remove_solution()
         else:
             solution = self.maze.solve_bfs()
             if solution:
@@ -258,6 +278,10 @@ class MazeEditor:
                 self.solved = True
             else:
                 print("No solution found")
+
+    def remove_solution(self):
+        self.canvas.delete("solution_path")
+        self.solved = False
 
     def draw_solution(self, path):
         # Check if the path is empty
@@ -274,7 +298,7 @@ class MazeEditor:
         for i in range(len(canvas_path) - 1):
             self.canvas.create_line(canvas_path[i], canvas_path[i + 1], fill="blue", width=2, tags="solution_path")
             self.canvas.update()
-            self.canvas.after(100)
+            self.canvas.after(50)
 
 parser = ArgumentParser(
                 prog='guiMazeCreator.py',
