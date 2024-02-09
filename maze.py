@@ -14,6 +14,9 @@ class Cell:
 
     def __str__(self):
         return str(self.coords())
+    
+    def __repr__(self):
+        return str(self.coords())
 
     def get_key(self):
         return (self.x, self.y)
@@ -203,46 +206,51 @@ class Maze:
                     maze_file.write(int(byte, base=2).to_bytes(1, 'big'))
 
     def solve_dfs(self):
-        with open('solver_outut.txt', 'w') as f:
-            traversed = Path(path=[], last_seen_number=0)
-            last_seen_number = 0
-            stack = [self.start_cell]
-            while stack:
-                current = stack.pop()
-                traversed.path.append(current)
-                last_seen_number = current.number if current.number is not None else last_seen_number
-                # if we are at the end, we have the solution
-                if current.is_end:
-                    break
-                # check for legal neighbors
-                legal_neighbors = current.legal_neighbors(self, traversed.path_coords(), last_seen_number)
-                # if there are legal neighbors, add them to the stack
-                if legal_neighbors:
-                    for neighbor in legal_neighbors:
-                        stack.append(neighbor)
-                # if there aren't any legal neighbors, we need to correct the traversed path to match the next cell on the stack
-                else:
-                    legal_neighbors = stack[-1].legal_neighbors(self)
-                    while legal_neighbors and traversed.path and traversed.path[-1] not in legal_neighbors:
-                        removing_cell = traversed.path.pop()
-                        if removing_cell.number is not None:
-                            last_seen_number = removing_cell.number - 1
-            
-            return traversed
+        traversed = Path(path=[], last_seen_number=0)
+        last_seen_number = 0
+        stack = [self.start_cell]
+        while stack:
+            current = stack.pop()
+            traversed.path.append(current)
+            last_seen_number = current.number if current.number is not None else last_seen_number
+            # if we are at the end, we have the solution
+            if current.is_end:
+                break
+            # check for legal neighbors
+            legal_neighbors = current.legal_neighbors(self, traversed.path_coords(), last_seen_number)
+            # if there are legal neighbors, add them to the stack
+            if legal_neighbors:
+                for neighbor in legal_neighbors:
+                    stack.append(neighbor)
+            # if there aren't any legal neighbors, we need to correct the traversed path to match the next cell on the stack
+            else:
+                legal_neighbors = stack[-1].legal_neighbors(self)
+                while legal_neighbors and traversed.path and traversed.path[-1] not in legal_neighbors:
+                    removing_cell = traversed.path.pop()
+                    if removing_cell.number is not None:
+                        last_seen_number = removing_cell.number - 1
+        
+        return traversed
     
     def solve_bfs(self):
         possible_solutions = [Path([self.start_cell])]
         new_solutions = []
 
         while possible_solutions:
+            # for each path in the list
             for solution in possible_solutions:
+                # get the last cell in the path
                 current = solution.path[-1]
+                # if the last cell is the end, we have the solution
                 if current.is_end:
                     return solution
+                # for each legal neighbor of the last cell, create a new path and create a new list of possible solutions for the next iteration
                 for neighbor in current.legal_neighbors(self, solution.path_coords(), solution.last_seen_number):
                     new_path = Path(solution.path + [neighbor], neighbor.number if neighbor.number is not None else solution.last_seen_number)
                     new_solutions.append(new_path)
+            # set the list of possible solutions to the list of new solutions
             possible_solutions = new_solutions
             new_solutions = []
+            # repeat until we find the solution
 
         return Path()
