@@ -1,4 +1,5 @@
 from enum import Enum
+import time
 from typing import Literal, List, Dict, Tuple
 
 class Solution:
@@ -16,12 +17,15 @@ class Cell:
         self.is_end = False
         self.number = None
 
+    def __str__(self):
+        return self.coords()
+
     def get_key(self):
         return (self.x, self.y)
     
-    def legal_neighbors(self, maze, traversed_path):
+    def legal_neighbors(self, maze, traversed_path=[], last_seen_number=None, attempted_turns=[]):
         neighbors = []
-        if not self.walls['top'] and self.y > 0 and (self.x, self.y - 1) not in traversed_path :
+        if not self.walls['top'] and self.y > 0 and (self.x, self.y - 1) not in traversed_path:
             neighbors.append(maze.cells[(self.x, self.y - 1)])
         if not self.walls['right'] and self.x < maze.grid_size_x - 1 and (self.x + 1, self.y) not in traversed_path:
             neighbors.append(maze.cells[(self.x + 1, self.y)])
@@ -29,7 +33,41 @@ class Cell:
             neighbors.append(maze.cells[(self.x, self.y + 1)])
         if not self.walls['left'] and self.x > 0 and (self.x - 1, self.y) not in traversed_path:
             neighbors.append(maze.cells[(self.x - 1, self.y)])
+
+        neighbors_coords = [neighbor.coords() for neighbor in neighbors]
+
+        i = len(neighbors_coords) - 1
+        while i >= 0:
+            if neighbors_coords[i] in traversed_path:
+                neighbors.remove(neighbors[i])
+                i -= 1
+                continue
+            
+            if attempted_turns:
+                removed = False
+                for attempted_turn in attempted_turns:
+                    if attempted_turn[0] == self.coords() and attempted_turn[1] == neighbors_coords[i]:
+                        neighbors.remove(neighbors[i])
+                        removed = True
+                        break
+                if removed:
+                    i -= 1
+                    continue
+            
+            if last_seen_number is not None:
+                if maze.cells[neighbors_coords[i]].number is not None and maze.cells[neighbors_coords[i]].number != last_seen_number+1:
+                    neighbors.remove(neighbors[i])
+                    i -= 1
+                    continue
+                if maze.cells[neighbors_coords[i]].is_end and last_seen_number != maze.numbers[-1]:
+                    neighbors.remove(neighbors[i])
+                    i -= 1
+                    continue
+            i -= 1
         return neighbors
+    
+    def coords(self):
+        return (self.x, self.y)
 
 
 class Maze:
@@ -168,31 +206,33 @@ class Maze:
     def solve_dfs(self):
         solution = Solution()
         traversed_path: list[tuple[int,int]] = []
+        attempted_turns: list[tuple[tuple[int, int],tuple[int, int]]] = []
         last_seen_number = 0
         stack = [self.start_cell]
-        # while we have cells to traverse
         while stack:
             current = stack.pop()
-            # check if we are able to go to this cell
-            if current in traversed_path or (current.number is not None and current.number != last_seen_number+1):
-                continue
-            # move to new cell
-            traversed_path.append(current)
+            print(current.coords())
+            attempted_turns.append((traversed_path[-1], current.coords())) if traversed_path else None
+            traversed_path.append(current.coords())
             last_seen_number = current.number if current.number is not None else last_seen_number
             # if we are at the end, we have the solution
             if current.is_end:
-                solution.path = traversed_path
-                return solution
+                break
             # check for legal neighbors
-            legal_neighbors = current.legal_neighbors(self, traversed_path)
+            legal_neighbors = current.legal_neighbors(self, traversed_path, last_seen_number, attempted_turns)
+            legal_neighbor_cells = [neighbor.coords() for neighbor in legal_neighbors]
+            print(f'legal neighbors: {legal_neighbor_cells}')
             # if there are legal neighbors, add them to the stack
             if legal_neighbors:
                 for neighbor in legal_neighbors:
                     stack.append(neighbor)
-            # if there aren't any legal neighbors, we need to correct the traversed path to match the last correct cell
+            # if there aren't any legal neighbors, we need to correct the traversed path to match the next cell on the stack
             else:
-                while traversed_path[-1] != stack[-1]:
+                legal_neighbor_cells = [neighbor.coords() for neighbor in stack[-1].legal_neighbors(self)] if stack else []
+                while legal_neighbor_cells and traversed_path and traversed_path[-1] not in legal_neighbor_cells:
                     removing_cell = traversed_path.pop()
+                    print(f"Removing {removing_cell} for {stack[-1].coords()}")
                     if self.cells[removing_cell].number is not None:
                         last_seen_number = self.cells[removing_cell].number - 1
+        solution.path = traversed_path
         return solution
