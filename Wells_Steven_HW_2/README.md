@@ -5,6 +5,8 @@
 
 For this assignment, I chose the number-maze; the type of maze where it is very similar to your average maze, but with some numbered cells. To solve the maze, you need to pass through every one of the numbered cells in order before you reach the end square.
 
+![](readme/numbered-maze.png)
+
 ## Files in Submission
 
 This submission contains two python files: 'maze.py' and 'guiMazeCreator.py'. 
@@ -27,13 +29,13 @@ When you are loading one of these mazes, you have two options to do so. One opti
 ```
 py guiMazeCreator.py
 ```
-and then hit the 'Load from file' button, and then enter the maze file's name. For instance, to load mazeD3-Sun, you would just type 'mazeD3-Sun' into this box:
+and then hit the 'Load from file' button, and then enter the maze file's name. For instance, to load mazeD4, you would just type 'mazeD4' into this box:
 
 ![](readme/load_button.png)
  
-You can also load mazes by passing them as an argument when launching the guiMazeCreator. For instance, to load 'mazeD3-Sun', you would launch the guiMazeCreator.py program like this:
+You can also load mazes by passing them as an argument when launching the guiMazeCreator. For instance, to load 'mazeD4', you would launch the guiMazeCreator.py program like this:
 ```
-py guiMazeCreator.py -f mazeD3-Sun
+py guiMazeCreator.py -f mazeD4
 ```
 
 ## Using solver algorithms
@@ -44,7 +46,7 @@ Once you have a maze loaded in the gui editor that is valid (has a start and end
 
 doing so will activate the correlating solver algorithm (located in maze.py), and then will pass the solution it has found back to the gui program, which will draw that solution with a blue line, like this:
 
-![](readme/mazeD3-Sun-solution.png)
+![](readme/mazeD4-solution.png)
 
 ## Included maze files
 
@@ -52,7 +54,7 @@ Included are several maze files:
 
 - maze00
 
-this is the maze that was included in the packet we received on the day we went over many different maze types. I thought I would include it because it was the first maze that I tested my solving algorithms on
+this is the maze that was included in the packet we received on the day we went over many different maze types. I thought I would include it because it was the first maze that I tested my solving algorithms on.
 
 - mazeD1
 - mazeD2
@@ -61,7 +63,7 @@ this is the maze that was included in the packet we received on the day we went 
 - mazeS1
 - mazeS2
 
-the rest of these mazes are ones that I have created, the ones like 'mazeD' are bigger mazes in 15x12 space, and the ones like 'mazeS' are smaller mazes, one of which is 7x7 and the other is 8x8
+the rest of these mazes are ones that I have created, the ones like 'mazeD' are bigger mazes in 15x12 space, and the ones like 'mazeS' are smaller mazes, one of which is 7x7 and the other is 8x8.
 
 ## Solving algorithms
 
@@ -83,4 +85,4 @@ So, if the last number we have passed is a 1, and there is a 2 cell in the maze,
 
 My thought process here was that whenever I am solving a maze like this, when I make a turn I try to go in the direction of the next numbered cell that I need. So if the most recent number I touched was 1, I will make my turns to try to get to the number 2. That is the modification I made to my solve_dfs method in order to make it more human-like. 
 
-Changing the algorithm like this has some interesting results - I added functionality to record the number of iterations
+Changing the algorithm like this has some interesting results - I added functionality to record the number of iterations whenever you try a certain algorithm, and it showed that some mazes were solved much quicker by solve_human_search. For example, maze00 was solved ~2.5x faster by solve_human_search than solve_dfs. However, some mazes took much longer for solve_human_search. One example is mazeD5, which took twice as long for solve_human_search to solve than regular solve_dfs.
