@@ -1,1 +1,4 @@
 .venv
+solver_output_bfs.txt
+solver_output_dfs.txt
+solver_output_human.txt

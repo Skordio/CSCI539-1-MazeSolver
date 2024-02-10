@@ -56,6 +56,9 @@ class MazeEditor:
         self.number_button = tk.Button(self.button_frame2, text="Solve BFS", command=self.solve_bfs)
         self.number_button.pack(side=tk.LEFT)
 
+        self.number_button = tk.Button(self.button_frame2, text="Solve Human Search", command=self.solve_human_search)
+        self.number_button.pack(side=tk.LEFT)
+
         self.number_button = tk.Button(self.button_frame2, text="Remove Solution", command=self.remove_solution)
         self.number_button.pack(side=tk.LEFT)
         
@@ -279,6 +282,17 @@ class MazeEditor:
             else:
                 print("No solution found")
 
+    def solve_human_search(self):
+        if self.solved:
+            self.remove_solution()
+        else:
+            solution = self.maze.solve_human_search()
+            if solution:
+                self.draw_solution(solution.path_coords())
+                self.solved = True
+            else:
+                print("No solution found")
+
     def remove_solution(self):
         self.canvas.delete("solution_path")
         self.solved = False
@@ -295,14 +309,12 @@ class MazeEditor:
         for i in range(len(canvas_path) - 1):
             self.canvas.create_line(canvas_path[i], canvas_path[i + 1], fill="blue", width=2, tags="solution_path")
             self.canvas.update()
-            self.canvas.after(50)
+            self.canvas.after(30)
 
 parser = ArgumentParser(
                 prog='guiMazeCreator.py',
                 description='Edits, saves, and solves mazes')
-
 parser.add_argument('-f','--filename', required=False, help='The filename of the maze to load from') 
-
 args = parser.parse_args()
 
 def main():

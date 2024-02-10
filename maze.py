@@ -21,6 +21,9 @@ class Cell:
     def get_key(self):
         return (self.x, self.y)
     
+    def distance_to_cell(self, cell):
+        return ((self.x - cell.x)**2 + (self.y - cell.y)**2)**0.5
+    
     def legal_neighbors(self, maze, traversed_path=[], last_seen_number=None):
         neighbors = []
         if not self.walls['top'] and self.y > 0:
@@ -206,50 +209,112 @@ class Maze:
                     maze_file.write(int(byte, base=2).to_bytes(1, 'big'))
 
     def solve_dfs(self):
-        traversed = Path(path=[], last_seen_number=0)
-        last_seen_number = 0
-        stack = [(None, self.start_cell)]
-        while stack:
-            current_cell = stack.pop()[1]
-            traversed.path.append(current_cell)
-            last_seen_number = current_cell.number if current_cell.number is not None else last_seen_number
-            # if we are at the end, we have the solution
-            if current_cell.is_end:
-                break
-            # check for legal neighbors
-            legal_neighbors = current_cell.legal_neighbors(self, traversed.path, last_seen_number)
-            # if there are legal neighbors, add them to the stack
-            if legal_neighbors:
-                for neighbor in legal_neighbors:
-                    stack.append((current_cell, neighbor))
-            # if there aren't any legal neighbors, we need to correct the traversed path to match the next cell on the stack
-            elif stack:
-                while traversed.path and stack[-1][0] != traversed.path[-1]:
-                    removing_cell = traversed.path.pop()
-                    if removing_cell.number is not None:
-                        last_seen_number = removing_cell.number - 1
-            
-        return traversed
+        with open('solver_output_dfs.txt', 'w') as f:
+            traversed = Path(path=[], last_seen_number=0)
+            last_seen_number = 0
+            stack = [(None, self.start_cell)]
+            iterations = 0
+            while stack:
+                iterations += 1
+                current_cell = stack.pop()[1]
+                traversed.path.append(current_cell)
+                last_seen_number = current_cell.number if current_cell.number is not None else last_seen_number
+                # if we are at the end, we have the solution
+                if current_cell.is_end:
+                    break
+                # check for legal neighbors
+                legal_neighbors = current_cell.legal_neighbors(self, traversed.path, last_seen_number)
+                # if there are legal neighbors, add them to the stack
+                if legal_neighbors:
+                    for neighbor in legal_neighbors:
+                        stack.append((current_cell, neighbor))
+                # if there aren't any legal neighbors, we need to correct the traversed path to match the next cell on the stack
+                elif stack:
+                    while traversed.path and stack[-1][0] != traversed.path[-1]:
+                        removing_cell = traversed.path.pop()
+                        if removing_cell.number is not None:
+                            last_seen_number = removing_cell.number - 1
+                
+            f.write(f'iterations: {iterations}\n')
+            return traversed
     
     def solve_bfs(self):
-        possible_solutions = [Path([self.start_cell])]
-        new_solutions = []
-
-        while possible_solutions:
-            # for each path in the list
-            for solution in possible_solutions:
-                # get the last cell in the path
-                current = solution.path[-1]
-                # if the last cell is the end, we have the solution
-                if current.is_end:
-                    return solution
-                # for each legal neighbor of the last cell, create a new path and create a new list of possible solutions for the next iteration
-                for neighbor in current.legal_neighbors(self, solution.path, solution.last_seen_number):
-                    new_path = Path(solution.path + [neighbor], neighbor.number if neighbor.number is not None else solution.last_seen_number)
-                    new_solutions.append(new_path)
-            # set the list of possible solutions to the list of new solutions
-            possible_solutions = new_solutions
+        with open('solver_output_bfs.txt', 'w') as f:
+            possible_solutions = [Path([self.start_cell])]
             new_solutions = []
-            # repeat until we find the solution
+            iterations = 0
 
-        return Path()
+            while possible_solutions:
+                # for each path in the list
+                for solution in possible_solutions:
+                    iterations += 1
+                    # get the last cell in the path
+                    current = solution.path[-1]
+                    # if the last cell is the end, we have the solution
+                    if current.is_end:
+                        f.write(f'iterations: {iterations}\n')
+                        return solution
+                    # for each legal neighbor of the last cell, create a new path and create a new list of possible solutions for the next iteration
+                    for neighbor in current.legal_neighbors(self, solution.path, solution.last_seen_number):
+                        new_path = Path(solution.path + [neighbor], neighbor.number if neighbor.number is not None else solution.last_seen_number)
+                        new_solutions.append(new_path)
+                # set the list of possible solutions to the list of new solutions
+                possible_solutions = new_solutions
+                new_solutions = []
+                # repeat until we find the solution
+
+            f.write(f'iterations: {iterations}\n')
+            return Path()
+    
+    def rate_legal_neighbors(self, legal_neighbors, last_seen_number):
+        rated_neighbors = []
+        next_cell = None
+        if self.numbers and last_seen_number < self.numbers[-1]:
+            next_cell_num = last_seen_number + 1
+            for cell in self.cells.values():
+                if cell.number == next_cell_num:
+                    next_cell = cell
+                    break
+        elif (self.numbers and last_seen_number == self.numbers[-1]) or not self.numbers:
+            next_cell = self.end_cell
+
+        if next_cell is not None:
+            for neighbor in legal_neighbors:
+                rated_neighbors.append((neighbor, neighbor.distance_to_cell(next_cell)))
+            rated_neighbors.sort(key=lambda x: x[1], reverse=False)
+            return [x[0] for x in rated_neighbors]
+        else:
+            rated_neighbors = legal_neighbors
+            
+    
+    def solve_human_search(self):
+        with open('solver_output_human.txt', 'w') as f:
+            traversed = Path(path=[], last_seen_number=0)
+            last_seen_number = 0
+            stack = [(None, self.start_cell)]
+            iterations = 0
+            while stack:
+                iterations += 1
+                current_cell = stack.pop()[1]
+                traversed.path.append(current_cell)
+                last_seen_number = current_cell.number if current_cell.number is not None else last_seen_number
+                # if we are at the end, we have the solution
+                if current_cell.is_end:
+                    break
+                # check for legal neighbors
+                legal_neighbors = current_cell.legal_neighbors(self, traversed.path, last_seen_number)
+                legal_neighbors = self.rate_legal_neighbors(legal_neighbors, last_seen_number)
+                # if there are legal neighbors, add them to the stack
+                if legal_neighbors:
+                    for neighbor in legal_neighbors:
+                        stack.append((current_cell, neighbor))
+                # if there aren't any legal neighbors, we need to correct the traversed path to match the next cell on the stack
+                elif stack:
+                    while traversed.path and stack[-1][0] != traversed.path[-1]:
+                        removing_cell = traversed.path.pop()
+                        if removing_cell.number is not None:
+                            last_seen_number = removing_cell.number - 1
+                
+            
+            f.write(f'iterations: {iterations}\n')
+            return traversed
