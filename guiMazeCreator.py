@@ -263,35 +263,32 @@ class MazeEditor:
     def solve_dfs(self):
         if self.solved:
             self.remove_solution()
+        solution = self.maze.solve_dfs()
+        if solution:
+            self.draw_solution(solution.path_coords())
+            self.solved = True
         else:
-            solution = self.maze.solve_dfs()
-            if solution:
-                self.draw_solution(solution.path_coords())
-                self.solved = True
-            else:
-                print("No solution found")
+            print("No solution found")
     
     def solve_bfs(self):
         if self.solved:
             self.remove_solution()
+        solution = self.maze.solve_bfs()
+        if solution:
+            self.draw_solution(solution.path_coords())
+            self.solved = True
         else:
-            solution = self.maze.solve_bfs()
-            if solution:
-                self.draw_solution(solution.path_coords())
-                self.solved = True
-            else:
-                print("No solution found")
+            print("No solution found")
 
     def solve_human_search(self):
         if self.solved:
             self.remove_solution()
+        solution = self.maze.solve_human_search()
+        if solution:
+            self.draw_solution(solution.path_coords())
+            self.solved = True
         else:
-            solution = self.maze.solve_human_search()
-            if solution:
-                self.draw_solution(solution.path_coords())
-                self.solved = True
-            else:
-                print("No solution found")
+            print("No solution found")
 
     def remove_solution(self):
         self.canvas.delete("solution_path")
