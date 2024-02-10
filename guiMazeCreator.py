@@ -8,14 +8,14 @@ class MazeEditor:
     def __init__(self, master, load_from_file=None):
         self.master = master
         self.highlighted_cell = None
-        self.cell_size = 55  # Visual size of cells in pixels
+        self.cell_size = 40  # Visual size of cells in pixels
         self.solved = False
         
         self.maze = Maze(15, 12)
         
         self.create_widgets()
         self.reset_grid()
-        self.resize_grid(self.maze.grid_size_x, self.maze.grid_size_y)
+        self.resize_grid()
 
         if load_from_file:
             self.load_from_file(load_from_file)
@@ -45,6 +45,9 @@ class MazeEditor:
 
         self.number_button = tk.Button(self.button_frame1, text="Place Number", command=self.place_number)
         self.number_button.pack(side=tk.LEFT)
+
+        self.size_button = tk.Button(self.button_frame1, text="Set Cell Size", command=self.prompt_cell_size)
+        self.size_button.pack(side=tk.RIGHT)
 
         # Second row of buttons
         self.button_frame2 = tk.Frame(self.master)
@@ -83,7 +86,7 @@ class MazeEditor:
         if sizeX and sizeY:
             self.maze.grid_size_x = int(sizeX)
             self.maze.grid_size_y = int(sizeY)
-            self.resize_grid(sizeX, sizeY)
+            self.resize_grid()
 
     def save_to_file_prompt(self):
         filename = simpledialog.askstring("Input", "Enter file name:", parent=self.master)
@@ -95,25 +98,28 @@ class MazeEditor:
             filename = simpledialog.askstring("Input", "Enter file name:", parent=self.master)
         if filename:
             self.maze.load_from_file(filename)
-            self.resize_grid(self.maze.grid_size_x, self.maze.grid_size_y)
+            self.resize_grid()
             self.maze.load_from_file(filename)
 
             for cell in self.maze.cells.values():
                 cell.highlight_rect = None
             self.draw_grid()
 
-    def resize_grid(self, sizeX, sizeY):
+    def resize_grid(self,):
         # self.maze.grid_size_x = int(sizeX)
         # self.maze.grid_size_y = int(sizeY)
+        self.resize_master()
+        self.reset_grid()
+
+    def resize_master(self):
         canvas_width = self.cell_size * self.maze.grid_size_x
         canvas_height = self.cell_size * self.maze.grid_size_y
         self.canvas.config(width=canvas_width, height=canvas_height)
-        if canvas_width+40 < 500:
-            width = 500
+        if canvas_width+40 < 550:
+            width = 550
         else:
             width = canvas_width+40
         self.master.geometry(f"{width}x{canvas_height+115}")
-        self.reset_grid()
 
     def draw_grid(self):
         for i in range(self.maze.grid_size_x):
@@ -123,6 +129,16 @@ class MazeEditor:
                 cell = self.maze.cells[(i, j)]
                 if cell.highlight_rect:
                     self.canvas.tag_raise(cell.highlight_rect)
+
+    def prompt_cell_size(self):
+        size = simpledialog.askinteger("Input", "Enter cell size (default is 40, min is 20, max is 60):", parent=self.master, minvalue=20, maxvalue=60)
+        if size:
+            self.cell_size = size        
+            for cell in self.maze.cells.values():
+                cell.highlight_rect = None
+            self.canvas.delete("all")
+            self.resize_master()
+            self.draw_grid()
 
     def draw_cell(self, i, j, x1, y1):
         x2, y2 = x1 + self.cell_size, y1 + self.cell_size
