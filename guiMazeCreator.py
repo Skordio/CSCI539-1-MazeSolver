@@ -97,9 +97,9 @@ class MazeEditor:
         if not filename:
             filename = simpledialog.askstring("Input", "Enter file name:", parent=self.master)
         if filename:
+            self.reset_grid()
             self.maze.load_from_file(filename)
-            self.resize_grid()
-            self.maze.load_from_file(filename)
+            self.resize_master()
 
             for cell in self.maze.cells.values():
                 cell.highlight_rect = None

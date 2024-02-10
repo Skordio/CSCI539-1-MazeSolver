@@ -117,6 +117,8 @@ class Maze:
             grid_size_x = int.from_bytes(grid_size_x_byte, "big")
             grid_size_y = int.from_bytes(grid_size_y_byte, "big")
             
+            self.__init__(grid_size_x, grid_size_y)
+            
             self.set_grid_size(grid_size_x, grid_size_y)
             self.reset_cells()
             
