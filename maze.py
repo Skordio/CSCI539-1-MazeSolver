@@ -295,7 +295,7 @@ class Maze:
         if next_cell is not None:
             for neighbor in legal_neighbors:
                 rated_neighbors.append((neighbor, neighbor.distance_to_cell(next_cell)))
-            rated_neighbors.sort(key=lambda x: x[1], reverse=False)
+            rated_neighbors.sort(key=lambda x: x[1], reverse=True)
             return [x[0] for x in rated_neighbors]
         else:
             rated_neighbors = legal_neighbors
