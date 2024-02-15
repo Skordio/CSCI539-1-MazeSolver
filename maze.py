@@ -93,6 +93,18 @@ class Maze:
         self.grid_size_x = x
         self.grid_size_y = y
         
+    def add_number(self, number):
+        print(f'before: {self.numbers}')
+        self.numbers.append(number)
+        self.numbers.sort()
+        print(f'after: {self.numbers}')
+        
+    def remove_number(self, number):
+        print(f'before: {self.numbers}')
+        self.numbers.remove(number)
+        self.numbers.sort()
+        print(f'after: {self.numbers}')
+        
     def reset_cells(self):
         self.cells = {(x, y): Cell(x, y) for x in range(self.grid_size_x) for y in range(self.grid_size_y)}
         self.start_cell = None
@@ -118,6 +130,8 @@ class Maze:
             
             grid_size_x = int.from_bytes(grid_size_x_byte, "big")
             grid_size_y = int.from_bytes(grid_size_y_byte, "big")
+            
+            self.__init__(grid_size_x, grid_size_y)
             
             self.set_grid_size(grid_size_x, grid_size_y)
             self.reset_cells()
@@ -287,7 +301,7 @@ class Maze:
         if next_cell is not None:
             for neighbor in legal_neighbors:
                 rated_neighbors.append((neighbor, neighbor.distance_to_cell(next_cell)))
-            rated_neighbors.sort(key=lambda x: x[1], reverse=False)
+            rated_neighbors.sort(key=lambda x: x[1], reverse=True)
             return [x[0] for x in rated_neighbors]
         else:
             rated_neighbors = legal_neighbors

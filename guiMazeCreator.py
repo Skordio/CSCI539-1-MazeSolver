@@ -77,6 +77,9 @@ class MazeEditor:
         self.maze.cells = {(x, y): Cell(x, y) for x in range(self.maze.grid_size_x) for y in range(self.maze.grid_size_y)}
         for cell in self.maze.cells.values():
             cell.highlight_rect = None
+        self.redraw_all()
+        
+    def redraw_all(self):
         self.canvas.delete("all")
         self.draw_grid()
 
@@ -97,9 +100,9 @@ class MazeEditor:
         if not filename:
             filename = simpledialog.askstring("Input", "Enter file name:", parent=self.master)
         if filename:
+            self.reset_grid()
             self.maze.load_from_file(filename)
-            self.resize_grid()
-            self.maze.load_from_file(filename)
+            self.resize_master()
 
             for cell in self.maze.cells.values():
                 cell.highlight_rect = None
@@ -146,11 +149,11 @@ class MazeEditor:
         self.maze.cells[(i, j)].id = cell_id
         cell = self.maze.cells[(i, j)]
         if cell.is_start:
-            self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text="S", fill="green", font=('Arial', self.cell_size//2), tags=(f"{cell.id}-start"))
+            self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text="S", fill="green", font=('Arial', self.cell_size//2), tags=(f"{cell.coords()}-start"))
         elif cell.is_end:
-            self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text="E", fill="red", font=('Arial', self.cell_size//2), tags=(f"{cell.id}-end"))
+            self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text="E", fill="red", font=('Arial', self.cell_size//2), tags=(f"{cell.coords()}-end"))
         elif cell.number is not None:
-            self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text=str(cell.number), font=('Arial', self.cell_size//2), tags=(f"{cell.id}-number"))
+            self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text=str(cell.number), font=('Arial', self.cell_size//2), tags=(f"{cell.coords()}-number"))
         self.update_cell_walls(i, j)
 
     def update_cell_walls(self, i, j):
@@ -212,8 +215,10 @@ class MazeEditor:
             self.update_cell_walls(alsoUpdate['i'], alsoUpdate['j'])
             
     def toggle_highlight(self, event):
+        # i and j are coords for cell that was clicked
         i, j = (event.x // self.cell_size, event.y // self.cell_size)
         
+        # if we clicked the already highlighted cell
         if self.highlighted_cell and self.highlighted_cell == self.maze.cells[(i, j)]:
             self.canvas.delete(self.highlighted_cell.highlight_rect)
             self.highlighted_cell.highlight_rect = None
@@ -232,12 +237,13 @@ class MazeEditor:
     def set_start_cell(self):
         if self.highlighted_cell:
             if self.highlighted_cell.is_start:
-                self.canvas.delete(f"{self.highlighted_cell.id}-start")
+                self.canvas.delete(f"{self.highlighted_cell.coords()}-start")
                 self.highlighted_cell.is_start = False
                 self.maze.start_cell = None
+                self.redraw_all()
             else:
                 for cell in self.maze.cells.values():
-                    self.canvas.delete(f"{cell.id}-start")
+                    self.canvas.delete(f"{cell.coords()}-start")
                     cell.is_start = False
                 self.highlighted_cell.is_start = True
                 self.maze.start_cell = self.highlighted_cell
@@ -246,12 +252,13 @@ class MazeEditor:
     def set_end_cell(self):
         if self.highlighted_cell:
             if self.highlighted_cell.is_end:
-                self.canvas.delete(f"{self.highlighted_cell.id}-end")
+                self.canvas.delete(f"{self.highlighted_cell.coords()}-end")
                 self.highlighted_cell.is_end = False
                 self.maze.end_cell = None
+                self.redraw_all()
             else:
                 for cell in self.maze.cells.values():
-                    self.canvas.delete(f"{cell.id}-end")
+                    self.canvas.delete(f"{cell.coords()}-end")
                     cell.is_end = False
                 self.highlighted_cell.is_end = True
                 self.maze.end_cell = self.highlighted_cell
@@ -260,13 +267,15 @@ class MazeEditor:
     def place_number(self):
         if self.highlighted_cell:
             if self.highlighted_cell.number is not None:
-                self.canvas.delete(f"{self.highlighted_cell.id}-number")
+                self.canvas.delete(f"{self.highlighted_cell.coords()}-number")
+                self.maze.remove_number(self.highlighted_cell.number)
                 self.highlighted_cell.number = None
+                self.redraw_all()
             else:
                 number = simpledialog.askinteger("Input", "Enter cell number:", parent=self.master, minvalue=1, maxvalue=100)
                 if number is not None:
                     self.highlighted_cell.number = number
-                    self.maze.numbers.append(number)
+                    self.maze.add_number(number)
             self.draw_grid()
         
     def find_cell_coordinates(self, cell):
