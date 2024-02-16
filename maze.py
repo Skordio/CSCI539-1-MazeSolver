@@ -334,3 +334,36 @@ class Maze:
             
             f.write(f'iterations: {iterations}\n')
             return traversed
+        
+    def new_random_maze(self, x_grid_size=15, y_grid_size=12):
+        self.set_grid_size(15, 12)
+        self.reset_cells()
+        self.set_start(0, 0)
+        self.set_end(14, 11)
+        cell_horizontal_pairs = []
+        cell_vertical_pairs = []
+        for x in range(self.grid_size_x):
+            for y in range(self.grid_size_y):
+                if x < self.grid_size_x - 1:
+                    cell_horizontal_pairs.append(((x, y), (x+1, y)))
+                if y < self.grid_size_y - 1:
+                    cell_vertical_pairs.append(((x, y), (x, y+1))
+                )
+        for cell in cell_horizontal_pairs:
+            random = random.randint(0, 1)
+            if random == 1:
+                self.cells[cell[0]].walls['right'] = True
+                self.cells[cell[1]].walls['left'] = True
+            else:
+                self.cells[cell[0]].walls['right'] = False
+                self.cells[cell[1]].walls['left'] = False
+        for cell in cell_vertical_pairs:
+            random = random.randint(0, 1)
+            if random == 1:
+                self.cells[cell[0]].walls['bottom'] = True
+                self.cells[cell[1]].walls['top'] = True
+            else:
+                self.cells[cell[0]].walls['bottom'] = False
+                self.cells[cell[1]].walls['top'] = False
+        self.numbers = []
+        self.save_to_file('random_maze.maze')
