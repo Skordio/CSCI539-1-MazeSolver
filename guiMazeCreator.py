@@ -53,22 +53,29 @@ class MazeEditor:
         self.button_frame2 = tk.Frame(self.master)
         self.button_frame2.pack(side=tk.TOP, fill=tk.X, padx=20)
 
-        self.number_button = tk.Button(self.button_frame2, text="Solve DFS", command=self.solve_dfs)
-        self.number_button.pack(side=tk.LEFT)
+        self.dfs_solve_button = tk.Button(self.button_frame2, text="Solve DFS", command=self.solve_dfs)
+        self.dfs_solve_button.pack(side=tk.LEFT)
 
-        self.number_button = tk.Button(self.button_frame2, text="Solve BFS", command=self.solve_bfs)
-        self.number_button.pack(side=tk.LEFT)
+        self.bfs_solve_button = tk.Button(self.button_frame2, text="Solve BFS", command=self.solve_bfs)
+        self.bfs_solve_button.pack(side=tk.LEFT)
 
-        self.number_button = tk.Button(self.button_frame2, text="Solve Human Search", command=self.solve_human_search)
-        self.number_button.pack(side=tk.LEFT)
+        self.human_solve_button = tk.Button(self.button_frame2, text="Solve Human Search", command=self.solve_human_search)
+        self.human_solve_button.pack(side=tk.LEFT)
 
-        self.number_button = tk.Button(self.button_frame2, text="Remove Solution", command=self.remove_solution)
-        self.number_button.pack(side=tk.LEFT)
+        self.remove_solution_button = tk.Button(self.button_frame2, text="Remove Solution", command=self.remove_solution)
+        self.remove_solution_button.pack(side=tk.LEFT)
         
-        self.save_to_file_button = tk.Button(self.button_frame2, text="Save to File", command=self.save_to_file_prompt)
+        # Third row of buttons
+        self.button_frame3 = tk.Frame(self.master)
+        self.button_frame3.pack(side=tk.TOP, fill=tk.X, padx=20, pady=(0, 10))
+        
+        self.new_random_maze_button = tk.Button(self.button_frame3, text="New Random Maze", command=self.new_random_maze)
+        self.new_random_maze_button.pack(side=tk.LEFT)
+        
+        self.save_to_file_button = tk.Button(self.button_frame3, text="Save to File", command=self.save_to_file_prompt)
         self.save_to_file_button.pack(side=tk.RIGHT)
         
-        self.load_from_file_button = tk.Button(self.button_frame2, text="Load from File", command=self.load_from_file)
+        self.load_from_file_button = tk.Button(self.button_frame3, text="Load from File", command=self.load_from_file)
         self.load_from_file_button.pack(side=tk.RIGHT)
         
         self.canvas.bind("<Button-3>", self.toggle_highlight)  # Right-click to highlight a cell
@@ -122,7 +129,7 @@ class MazeEditor:
             width = 550
         else:
             width = canvas_width+40
-        self.master.geometry(f"{width}x{canvas_height+115}")
+        self.master.geometry(f"{width}x{canvas_height+145}")
 
     def draw_grid(self):
         for i in range(self.maze.grid_size_x):
@@ -130,6 +137,8 @@ class MazeEditor:
                 x1, y1 = i * self.cell_size, j * self.cell_size
                 self.draw_cell(i, j, x1, y1)
                 cell = self.maze.cells[(i, j)]
+                if not hasattr(cell, 'highlight_rect'):
+                    cell.highlight_rect = None
                 if cell.highlight_rect:
                     self.canvas.tag_raise(cell.highlight_rect)
 
@@ -332,6 +341,10 @@ class MazeEditor:
             self.canvas.create_line(canvas_path[i], canvas_path[i + 1], fill="blue", width=2, tags="solution_path")
             self.canvas.update()
             self.canvas.after(30)
+            
+    def new_random_maze(self):
+        self.maze.new_random_maze()
+        self.redraw_all()
 
 parser = ArgumentParser(
                 prog='guiMazeCreator.py',
