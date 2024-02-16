@@ -2,6 +2,7 @@ from enum import Enum
 import time
 from typing import Literal, List, Dict, Tuple
 from collections import deque
+import os
 
 class Cell:
     def __init__(self, x, y):
@@ -117,8 +118,9 @@ class Maze:
         self.end_cell = self.cells[(x, y)]
         self.end_cell.is_end = True
 
+
     def load_from_file(self, filename):
-        with open(f'mazes\{filename}', 'rb') as maze_file:
+        with open(os.path.join('mazes', filename), 'rb') as maze_file:
             grid_size_x_byte = maze_file.read(1)
             grid_size_y_byte = maze_file.read(1)
             
@@ -174,7 +176,8 @@ class Maze:
                 if cell.number is not None:
                     self.numbers.append(cell.number)
             self.numbers.sort()
-            
+
+
     def save_to_file(self, filename):
         with open(f'mazes\{filename}', 'wb') as maze_file:
             maze_file.write(int(self.grid_size_x).to_bytes(1, 'big'))
@@ -218,6 +221,7 @@ class Maze:
                     
                     maze_file.write(int(byte, base=2).to_bytes(1, 'big'))
 
+
     def solve_dfs(self):
         with open('solver_output_dfs.txt', 'w') as f:
             traversed = Path(path=[], last_seen_number=0)
@@ -248,6 +252,7 @@ class Maze:
             f.write(f'iterations: {iterations}\n')
             return traversed
     
+
     def solve_bfs(self):
         with open('solver_output_bfs.txt', 'w') as f:
             possible_solutions = [Path([self.start_cell])]
@@ -276,6 +281,7 @@ class Maze:
             f.write(f'iterations: {iterations}\n')
             return Path()
     
+
     def rate_legal_neighbors(self, legal_neighbors, last_seen_number):
         rated_neighbors = []
         next_cell = None
