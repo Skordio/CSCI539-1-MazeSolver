@@ -93,16 +93,12 @@ class Maze:
         self.grid_size_y = y
         
     def add_number(self, number):
-        print(f'before: {self.numbers}')
         self.numbers.append(number)
         self.numbers.sort()
-        print(f'after: {self.numbers}')
         
     def remove_number(self, number):
-        print(f'before: {self.numbers}')
         self.numbers.remove(number)
         self.numbers.sort()
-        print(f'after: {self.numbers}')
         
     def reset_cells(self):
         self.cells = {(x, y): Cell(x, y) for x in range(self.grid_size_x) for y in range(self.grid_size_y)}
