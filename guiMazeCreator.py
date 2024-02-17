@@ -297,7 +297,7 @@ class MazeEditor:
     def solve_dfs(self):
         if self.solved:
             self.remove_solution()
-        solution = self.maze.solve_dfs()
+        solution = self.maze.solve_dfs()[0]
         if solution:
             self.draw_solution(solution.path_coords())
             self.solved = True
@@ -307,7 +307,7 @@ class MazeEditor:
     def solve_bfs(self):
         if self.solved:
             self.remove_solution()
-        solution = self.maze.solve_bfs()
+        solution = self.maze.solve_bfs()[0]
         if solution:
             self.draw_solution(solution.path_coords())
             self.solved = True
@@ -317,7 +317,7 @@ class MazeEditor:
     def solve_human_search(self):
         if self.solved:
             self.remove_solution()
-        solution = self.maze.solve_human_search()
+        solution = self.maze.solve_human_search()[0]
         if solution:
             self.draw_solution(solution.path_coords())
             self.solved = True

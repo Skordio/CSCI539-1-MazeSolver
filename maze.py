@@ -224,10 +224,11 @@ class Maze:
                     maze_file.write(int(byte, base=2).to_bytes(1, 'big'))
 
 
-    def solve_dfs(self):
+    def solve_dfs(self) -> List[Path]:
         with open('solver_output_dfs.txt', 'w') as f:
             traversed = Path(path=[], last_seen_number=0)
             last_seen_number = 0
+            solutions = []
             stack = [(None, self.start_cell)]
             iterations = 0
             while stack:
@@ -237,9 +238,11 @@ class Maze:
                 last_seen_number = current_cell.number if current_cell.number is not None else last_seen_number
                 # if we are at the end, we have the solution
                 if current_cell.is_end:
-                    break
-                # check for legal neighbors
-                legal_neighbors = current_cell.legal_neighbors(self, traversed.path, last_seen_number)
+                    solutions.append(traversed)
+                    legal_neighbors = []
+                else:
+                    # check for legal neighbors
+                    legal_neighbors = current_cell.legal_neighbors(self, traversed.path, last_seen_number)
                 # if there are legal neighbors, add them to the stack
                 if legal_neighbors:
                     for neighbor in legal_neighbors:
@@ -252,11 +255,12 @@ class Maze:
                             last_seen_number = removing_cell.number - 1
                 
             f.write(f'iterations: {iterations}\n')
-            return traversed
+            return solutions
     
 
-    def solve_bfs(self):
+    def solve_bfs(self) -> List[Path]:
         with open('solver_output_bfs.txt', 'w') as f:
+            solutions = []
             possible_solutions = [Path([self.start_cell])]
             new_solutions = []
             iterations = 0
@@ -269,8 +273,8 @@ class Maze:
                     current = solution.path[-1]
                     # if the last cell is the end, we have the solution
                     if current.is_end:
-                        f.write(f'iterations: {iterations}\n')
-                        return solution
+                        solutions.append(solution)
+                        break
                     # for each legal neighbor of the last cell, create a new path and create a new list of possible solutions for the next iteration
                     for neighbor in current.legal_neighbors(self, solution.path, solution.last_seen_number):
                         new_path = Path(solution.path + [neighbor], neighbor.number if neighbor.number is not None else solution.last_seen_number)
@@ -281,7 +285,7 @@ class Maze:
                 # repeat until we find the solution
 
             f.write(f'iterations: {iterations}\n')
-            return Path()
+            return solutions
     
 
     def rate_legal_neighbors(self, legal_neighbors, last_seen_number):
@@ -308,6 +312,7 @@ class Maze:
     def solve_human_search(self):
         with open('solver_output_human.txt', 'w') as f:
             traversed = Path(path=[], last_seen_number=0)
+            solutions = []
             last_seen_number = 0
             stack = [(None, self.start_cell)]
             iterations = 0
@@ -318,10 +323,12 @@ class Maze:
                 last_seen_number = current_cell.number if current_cell.number is not None else last_seen_number
                 # if we are at the end, we have the solution
                 if current_cell.is_end:
-                    break
-                # check for legal neighbors
-                legal_neighbors = current_cell.legal_neighbors(self, traversed.path, last_seen_number)
-                legal_neighbors = self.rate_legal_neighbors(legal_neighbors, last_seen_number)
+                    solutions.append(traversed)
+                    legal_neighbors = []
+                else:
+                    # check for legal neighbors
+                    legal_neighbors = current_cell.legal_neighbors(self, traversed.path, last_seen_number)
+                    legal_neighbors = self.rate_legal_neighbors(legal_neighbors, last_seen_number)
                 # if there are legal neighbors, add them to the stack
                 if legal_neighbors:
                     for neighbor in legal_neighbors:
@@ -335,37 +342,42 @@ class Maze:
                 
             
             f.write(f'iterations: {iterations}\n')
-            return traversed
+            return solutions
         
     def new_random_maze(self):
-        self.set_grid_size(self.grid_size_x, self.grid_size_y)
-        self.reset_cells()
-        self.set_start(0, 0)
-        self.set_end(self.grid_size_x-1, self.grid_size_y-1)
-        cell_horizontal_pairs = []
-        cell_vertical_pairs = []
-        for x in range(self.grid_size_x):
-            for y in range(self.grid_size_y):
-                if x < self.grid_size_x - 1:
-                    cell_horizontal_pairs.append(((x, y), (x+1, y)))
-                if y < self.grid_size_y - 1:
-                    cell_vertical_pairs.append(((x, y), (x, y+1))
-                )
-        for cell in cell_horizontal_pairs:
-            rand = random.randint(0, 1)
-            if rand == 1:
-                self.cells[cell[0]].walls['right'] = True
-                self.cells[cell[1]].walls['left'] = True
-            else:
-                self.cells[cell[0]].walls['right'] = False
-                self.cells[cell[1]].walls['left'] = False
-        for cell in cell_vertical_pairs:
-            rand = random.randint(0, 1)
-            if rand == 1:
-                self.cells[cell[0]].walls['bottom'] = True
-                self.cells[cell[1]].walls['top'] = True
-            else:
-                self.cells[cell[0]].walls['bottom'] = False
-                self.cells[cell[1]].walls['top'] = False
-        self.numbers = []
-        self.save_to_file('random_maze.maze')
+        solutions = []
+        iterations = 0
+        while len(solutions) == 0:
+            iterations += 1
+            self.set_grid_size(self.grid_size_x, self.grid_size_y)
+            self.reset_cells()
+            self.set_start(0, 0)
+            self.set_end(self.grid_size_x-1, self.grid_size_y-1)
+            cell_horizontal_pairs = []
+            cell_vertical_pairs = []
+            for x in range(self.grid_size_x):
+                for y in range(self.grid_size_y):
+                    if x < self.grid_size_x - 1:
+                        cell_horizontal_pairs.append(((x, y), (x+1, y)))
+                    if y < self.grid_size_y - 1:
+                        cell_vertical_pairs.append(((x, y), (x, y+1))
+                    )
+            for cell in cell_horizontal_pairs:
+                rand = random.randint(0, 1)
+                if rand == 1:
+                    self.cells[cell[0]].walls['right'] = True
+                    self.cells[cell[1]].walls['left'] = True
+                else:
+                    self.cells[cell[0]].walls['right'] = False
+                    self.cells[cell[1]].walls['left'] = False
+            for cell in cell_vertical_pairs:
+                rand = random.randint(0, 1)
+                if rand == 1:
+                    self.cells[cell[0]].walls['bottom'] = True
+                    self.cells[cell[1]].walls['top'] = True
+                else:
+                    self.cells[cell[0]].walls['bottom'] = False
+                    self.cells[cell[1]].walls['top'] = False
+            self.numbers = []
+            solutions = self.solve_dfs()
+        print(f'iterations: {iterations}')
