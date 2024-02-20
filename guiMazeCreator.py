@@ -311,7 +311,9 @@ class MazeEditor:
     def solve_bfs(self):
         if self.solved:
             self.remove_solution()
-        solution = self.maze.solve_bfs(one_solution=True)[0]
+        solutions = self.maze.solve_bfs(one_solution=False)
+        print(f"Found {len(solutions)} solutions")
+        solution = solutions[0]
         if solution:
             self.draw_solution(solution.path_coords())
             self.solved = True 
