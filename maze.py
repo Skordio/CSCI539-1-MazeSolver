@@ -224,7 +224,7 @@ class Maze:
                     maze_file.write(int(byte, base=2).to_bytes(1, 'big'))
 
 
-    def solve_dfs(self) -> List[Path]:
+    def solve_dfs(self, one_solution=False) -> List[Path]:
         with open('solver_output_dfs.txt', 'w') as f:
             traversed = Path(path=[], last_seen_number=0)
             last_seen_number = 0
@@ -238,8 +238,12 @@ class Maze:
                 last_seen_number = current_cell.number if current_cell.number is not None else last_seen_number
                 # if we are at the end, we have the solution
                 if current_cell.is_end == True:
-                    solutions.append(copy.deepcopy(traversed))
-                    legal_neighbors = []
+                    if one_solution:
+                        f.write(f'iterations: {iterations}\n')
+                        return [traversed]
+                    else:
+                        solutions.append(copy.deepcopy(traversed))
+                        legal_neighbors = []
                 else:
                     # check for legal neighbors
                     legal_neighbors = current_cell.legal_neighbors(self, traversed.path, last_seen_number)
@@ -258,7 +262,7 @@ class Maze:
             return solutions
     
 
-    def solve_bfs(self) -> List[Path]:
+    def solve_bfs(self, one_solution=False) -> List[Path]:
         with open('solver_output_bfs.txt', 'w') as f:
             solutions = []
             possible_solutions = [Path([self.start_cell])]
@@ -273,8 +277,12 @@ class Maze:
                     current = solution.path[-1]
                     # if the last cell is the end, we have the solution
                     if current.is_end:
-                        solutions.append(solution)
-                        break
+                        if one_solution:
+                            f.write(f'iterations: {iterations}\n')
+                            return [solution]
+                        else:
+                            solutions.append(solution)
+                            break
                     # for each legal neighbor of the last cell, create a new path and create a new list of possible solutions for the next iteration
                     for neighbor in current.legal_neighbors(self, solution.path, solution.last_seen_number):
                         new_path = Path(solution.path + [neighbor], neighbor.number if neighbor.number is not None else solution.last_seen_number)
@@ -309,7 +317,7 @@ class Maze:
             rated_neighbors = legal_neighbors
             
     
-    def solve_human_search(self):
+    def solve_human_search(self, one_solution=False) -> List[Path]:
         with open('solver_output_human.txt', 'w') as f:
             traversed = Path(path=[], last_seen_number=0)
             solutions = []
@@ -323,8 +331,12 @@ class Maze:
                 last_seen_number = current_cell.number if current_cell.number is not None else last_seen_number
                 # if we are at the end, we have the solution
                 if current_cell.is_end:
-                    solutions.append(copy.deepcopy(traversed))
-                    legal_neighbors = []
+                    if one_solution:
+                        f.write(f'iterations: {iterations}\n')
+                        return [traversed]
+                    else:
+                        solutions.append(copy.deepcopy(traversed))
+                        legal_neighbors = []
                 else:
                     # check for legal neighbors
                     legal_neighbors = current_cell.legal_neighbors(self, traversed.path, last_seen_number)
@@ -384,6 +396,7 @@ class Maze:
             solutions = self.solve_dfs()
         print(f'iterations: {iterations}')
         
+        
     # this method takes a completely empty maze with no walls, and walks through a random path to take the first step in creating a maze
     def new_maze_random_path(self):
         not_valid = True
@@ -405,13 +418,35 @@ class Maze:
                     traversed.append(next_cell)
                     current_cell = next_cell
                 else:
+                    for i in range(self.grid_size_x + self.grid_size_y):
+                        traversed.pop()
+                        if traversed:
+                            current_cell = traversed[-1]
+                        else:
+                            break
+                        continue
                     break
-            if current_cell == self.end_cell and len(traversed) > num_cells*0.6:
+            if current_cell == self.end_cell and len(traversed) > num_cells*0.7:
                 not_valid = False
         
         self.draw_walls_around_path(traversed)
+        self.place_numbers_in_path(traversed)
+        self.randomize_walls_for_path(traversed)
+        self.remove_every_square_wall()
         print(f'iterations: {iterations}')
-    
+        
+        
+    def place_numbers_in_path(self, path):
+        up_to = int(((self.grid_size_x + self.grid_size_y) // 2) / 2)
+        step = int(len(path)//up_to)
+        place_nums_at = [0]
+        for i in range(up_to):
+            step_with_diff = step + random.randint(-2, 2)
+            place_nums_at.append(place_nums_at[i] + step_with_diff)
+        for i in range(1, up_to):
+            self.add_number(i)
+            path[place_nums_at[i]].number = i
+            
             
     def draw_walls_around_path(self, path):
         previous_cell = None
@@ -516,3 +551,89 @@ class Maze:
             
             previous_cell = current_cell
             
+            
+    def randomize_walls_for_path(self, path):
+        cell_horizontal_pairs = []
+        cell_vertical_pairs = []
+        for x in range(self.grid_size_x):
+            for y in range(self.grid_size_y):
+                if x < self.grid_size_x - 1:
+                    cell_horizontal_pairs.append(((x, y), (x+1, y)))
+                if y < self.grid_size_y - 1:
+                    cell_vertical_pairs.append(((x, y), (x, y+1))
+                )
+        for cell_pair in cell_horizontal_pairs:
+            if self.cells_consecutive_in_path(self.cells[cell_pair[0]], self.cells[cell_pair[1]], path):
+                change_wall = False
+            elif self.cells[cell_pair[0]] in path and self.cells[cell_pair[1]] in path:
+                change_wall = random.choice([True, False, False, False, False, ])
+            elif self.only_one_cell_in_path(self.cells[cell_pair[0]], self.cells[cell_pair[1]], path):
+                change_wall = random.choice([True, False, False, False, False, ])
+            else:
+                change_wall = random.choice([True, False])
+            if change_wall:
+                self.cells[cell_pair[0]].walls['right'] = not self.cells[cell_pair[0]].walls['right']
+                self.cells[cell_pair[1]].walls['left'] = not self.cells[cell_pair[1]].walls['left']
+        for cell_pair in cell_vertical_pairs:
+            if self.cells_consecutive_in_path(self.cells[cell_pair[0]], self.cells[cell_pair[1]], path):
+                change_wall = False
+            elif self.cells[cell_pair[0]] in path and self.cells[cell_pair[1]] in path:
+                change_wall = random.choice([True, False, False, False, False, ])
+            elif self.only_one_cell_in_path(self.cells[cell_pair[0]], self.cells[cell_pair[1]], path):
+                change_wall = random.choice([True, False, False, False, False, ])
+            else:
+                change_wall = random.choice([True, False])
+            if change_wall:
+                self.cells[cell_pair[0]].walls['bottom'] = not self.cells[cell_pair[0]].walls['bottom']
+                self.cells[cell_pair[1]].walls['top'] = not self.cells[cell_pair[1]].walls['top']
+    
+    
+    def cells_consecutive_in_path(self, cell1, cell2, path:list):
+        try:
+            cell1_index = path.index(cell1)
+            cell2_index = path.index(cell2)
+        except ValueError:
+            return False
+        return abs(cell1_index - cell2_index) == 1
+    
+    
+    def only_one_cell_in_path(self, cell1, cell2, path:list):
+        return cell1 in path and not cell2 in path or not cell1 in path and cell2 in path
+    
+    
+    def cell_is_square(self, cell:Cell):
+        if cell.walls['top'] and cell.walls['right'] and cell.walls['bottom'] and cell.walls['left']:
+            return True
+        if cell.x == 0 and cell.walls['top'] and cell.walls['right'] and cell.walls['bottom']:
+            return True
+        if cell.x == self.grid_size_x - 1 and cell.walls['top'] and cell.walls['left'] and cell.walls['bottom']:
+            return True
+        if cell.y == 0 and cell.walls['right'] and cell.walls['bottom'] and cell.walls['left']:
+            return True
+        if cell.y == self.grid_size_y - 1 and cell.walls['top'] and cell.walls['left'] and cell.walls['right']:
+            return True
+    
+    
+    def remove_every_square_wall(self):
+        for cell in self.cells.values():
+            if self.cell_is_square(cell):
+                choices = ['top', 'right', 'bottom', 'left']
+                if cell.x == 0:
+                    choices.remove('left')
+                if cell.x == self.grid_size_x - 1:
+                    choices.remove('right')
+                if cell.y == 0:
+                    choices.remove('top')
+                if cell.y == self.grid_size_y - 1:
+                    choices.remove('bottom')
+                choice = random.choice(choices)
+                cell.walls[choice] = False
+                if choice == 'top' and (cell.x, cell.y-1) in self.cells.keys():
+                    self.cells[(cell.x, cell.y-1)].walls['bottom'] = False
+                elif choice == 'right' and (cell.x+1, cell.y) in self.cells.keys():
+                    self.cells[(cell.x+1, cell.y)].walls['left'] = False
+                elif choice == 'bottom' and (cell.x, cell.y+1) in self.cells.keys():
+                    self.cells[(cell.x, cell.y+1)].walls['top'] = False
+                elif choice == 'left' and (cell.x-1, cell.y) in self.cells.keys():
+                    self.cells[(cell.x-1, cell.y)].walls['right'] = False
+                    
