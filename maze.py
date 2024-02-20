@@ -399,25 +399,31 @@ class Maze:
         
     # this method takes a completely empty maze with no walls, and walks through a random path to take the first step in creating a maze
     def new_maze_random_path(self):
-        not_valid = True
         traversed = []
         iterations = 0
         num_cells = self.grid_size_x * self.grid_size_y
         
-        while not_valid:
+        while True:
             iterations += 1
+            # reset maze
             self.reset_cells()
             self.set_start(0, 0)
             self.set_end(self.grid_size_x-1, self.grid_size_y-1)
+            # start at start cell
             current_cell = self.start_cell
+            # traverse a path so we can use the legal_neighbors function
             traversed = [current_cell]
             while current_cell != self.end_cell:
+                # call legal_neighbors
                 legal_neighbors = current_cell.legal_neighbors(self, traversed)
+                # if we have them, make a random choice and move to that cell
                 if legal_neighbors:
                     next_cell = random.choice(legal_neighbors) 
                     traversed.append(next_cell)
                     current_cell = next_cell
                 else:
+                    # if we have no legal neighbors, we have likely hit a dead end,
+                    # so we go back a few steps (based on size of maze) and try again
                     for i in range(self.grid_size_x + self.grid_size_y):
                         traversed.pop()
                         if traversed:
@@ -426,16 +432,19 @@ class Maze:
                             break
                         continue
                     break
+            # measure whether the path we have fits our criteria, and if so, 
+            # finish setting up the maze. If not, we try again.
             if current_cell == self.end_cell and len(traversed) > num_cells*0.7:
-                not_valid = False
+                break
         
         self.draw_walls_around_path(traversed)
         self.place_numbers_in_path(traversed)
         self.randomize_walls_for_path(traversed)
+        self.remove_outer_walls()
         self.remove_every_square_wall()
         print(f'iterations: {iterations}')
         
-        
+    # this method takes a randomly generated path and places numbers throughout that path
     def place_numbers_in_path(self, path):
         step = int((self.grid_size_x + self.grid_size_y) // 2) + 4
         up_to = int(len(path) // step)
@@ -638,3 +647,14 @@ class Maze:
                 elif choice == 'left' and (cell.x-1, cell.y) in self.cells.keys():
                     self.cells[(cell.x-1, cell.y)].walls['right'] = False
                     
+                    
+    def remove_outer_walls(self):
+        for cell in self.cells.values():
+            if cell.x == 0:
+                cell.walls['left'] = False
+            if cell.x == self.grid_size_x - 1:
+                cell.walls['right'] = False
+            if cell.y == 0:
+                cell.walls['top'] = False
+            if cell.y == self.grid_size_y - 1:
+                cell.walls['bottom'] = False
