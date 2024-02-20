@@ -12,11 +12,10 @@ One idea for measuring "unexpected things" would have to be measuring how close 
 
 the base amount of fun will be determined by length of path, and the final score will be slightly influenced by these two extra factors
 
-5 - should only be reachable when having max length and both of these extra factors
-4 - reachable by max length and one of the two factors
-3 - reachable just by going maxish length
-2 - reachable at 2/3 of max length
-1 - reachable at 1/3 of max length
+4 - should only be reachable when having max length and numbers reachable first that aren't one and one of these extra factors
+3 - reachable by max length and having numbers reachable first that aren't one
+2 - reachable at max length
+1 - reachable at 1/2 of max length
 
 
 max length for 20x20 - 50%
