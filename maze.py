@@ -432,6 +432,7 @@ class Maze:
         self.draw_walls_around_path(traversed)
         self.place_numbers_in_path(traversed)
         self.randomize_walls_for_path(traversed)
+        self.remove_outer_walls()
         self.remove_every_square_wall()
         print(f'iterations: {iterations}')
         
@@ -637,3 +638,13 @@ class Maze:
                 elif choice == 'left' and (cell.x-1, cell.y) in self.cells.keys():
                     self.cells[(cell.x-1, cell.y)].walls['right'] = False
                     
+    def remove_outer_walls(self):
+        for cell in self.cells.values():
+            if cell.x == 0:
+                cell.walls['left'] = False
+            if cell.x == self.grid_size_x - 1:
+                cell.walls['right'] = False
+            if cell.y == 0:
+                cell.walls['top'] = False
+            if cell.y == self.grid_size_y - 1:
+                cell.walls['bottom'] = False
