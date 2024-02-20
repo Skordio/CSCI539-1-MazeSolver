@@ -14,17 +14,22 @@ class Cell:
         self.is_end = False
         self.number = None
 
+
     def __str__(self):
         return str(self.coords())
+    
     
     def __repr__(self):
         return self.__str__()
 
+
     def get_key(self):
         return (self.x, self.y)
     
+    
     def distance_to_cell(self, cell):
         return ((self.x - cell.x)**2 + (self.y - cell.y)**2)**0.5
+    
     
     def legal_neighbors(self, maze, traversed_path=[], last_seen_number=None):
         neighbors = []
@@ -56,6 +61,7 @@ class Cell:
 
         return neighbors
     
+    
     def coords(self):
         return (self.x, self.y)
 
@@ -68,11 +74,14 @@ class Path:
         self.path = path
         self.last_seen_number = last_seen_number
 
+
     def __str__(self):
         return str(self.path_coords())
     
+    
     def __repr__(self):
         return self.__str__()
+
 
     def path_coords(self):
         return [cell.coords() for cell in self.path]
@@ -91,28 +100,34 @@ class Maze:
         self.reset_cells()
         self.numbers = []
         
+        
     def set_grid_size(self, x, y):
         self.grid_size_x = x
         self.grid_size_y = y
+        
         
     def add_number(self, number):
         self.numbers.append(number)
         self.numbers.sort()
         
+        
     def remove_number(self, number):
         self.numbers.remove(number)
         self.numbers.sort()
+        
         
     def reset_cells(self):
         self.cells = {(x, y): Cell(x, y) for x in range(self.grid_size_x) for y in range(self.grid_size_y)}
         self.start_cell = None
         self.end_cell = None
 
+
     def set_start(self, x, y):
         if self.start_cell is not None:
             self.start_cell.is_start = False
         self.start_cell = self.cells[(x, y)]
         self.start_cell.is_start = True
+
 
     def set_end(self, x, y):
         if self.end_cell is not None:
@@ -399,6 +414,57 @@ class Maze:
         
     # this method takes a completely empty maze with no walls, and walks through a random path to take the first step in creating a maze
     def new_maze_random_path(self):
+        iterations = 0
+        max_length_for_size = {
+            5: 0.9,
+            10: 0.7,
+            12: 0.65,
+            16: 0.4
+        }
+        max_length = 0.9
+        average_size = (self.grid_size_x + self.grid_size_y) // 2
+        for entry in max_length_for_size:
+            if average_size >= entry:
+                max_length = max_length_for_size[entry]
+        print(f'max_length: {max_length}')
+        
+        while True:
+            path, path_iterations = self.generate_random_path(max_length)
+            print('\nsuccessfully made path')
+            iterations += path_iterations
+            
+            self.draw_walls_around_path(path)
+            self.place_numbers_in_path(path)
+            self.remove_outer_walls()
+            
+            self.randomize_walls_for_path(path)
+            self.remove_every_square_wall()
+            self.remove_cutoff_sections()
+            
+            
+            if not self.number_higher_than_one_reachable_before_one():
+                print('failed number test')
+                continue
+            else:
+                print('passed number test')
+            
+            similarity_test = True
+            if average_size < 15:
+                solutions = self.solve_bfs()
+                print(f'solutions: {len(solutions)}')   
+                for i in range(1, len(solutions)):
+                    if self.solution_similarity(solutions[i].path, solutions[0].path) < 85:
+                        print('failed similarity test')
+                        similarity_test = False
+                        break
+            if similarity_test:
+                print('passed similarity test')
+                break
+        
+        print(f'iterations: {iterations}')
+        
+    
+    def generate_random_path(self, percent_traversed) -> Tuple[List[Cell], int]:
         traversed = []
         iterations = 0
         num_cells = self.grid_size_x * self.grid_size_y
@@ -409,7 +475,9 @@ class Maze:
             self.__init__(self.grid_size_x, self.grid_size_y)
             self.reset_cells()
             self.set_start(0, 0)
-            self.set_end(self.grid_size_x-1, self.grid_size_y-1)
+            end_x = random.randint(self.grid_size_x//4, self.grid_size_x-1)
+            end_y = random.randint(self.grid_size_y//4, self.grid_size_y-1)
+            self.set_end(end_x, end_y)
             # start at start cell
             current_cell = self.start_cell
             # traverse a path so we can use the legal_neighbors function
@@ -417,6 +485,8 @@ class Maze:
             while current_cell != self.end_cell:
                 # call legal_neighbors
                 legal_neighbors = current_cell.legal_neighbors(self, traversed)
+                if self.end_cell in legal_neighbors and len(traversed) < num_cells*percent_traversed:
+                    legal_neighbors.remove(self.end_cell)
                 # if we have them, make a random choice and move to that cell
                 if legal_neighbors:
                     next_cell = random.choice(legal_neighbors) 
@@ -433,32 +503,13 @@ class Maze:
                             break
                         continue
                     break
-            # measure whether the path we have fits our criteria, and if so, 
-            # finish setting up the maze. If not, we try again.
-            if current_cell == self.end_cell and len(traversed) > num_cells*0.5:
-                success = True
-                self.draw_walls_around_path(traversed)
-                self.place_numbers_in_path(traversed)
-                self.randomize_walls_for_path(traversed)
-                self.remove_outer_walls()
-                self.remove_every_square_wall()
-                self.remove_cutoff_sections()
-                solutions = self.solve_bfs()
-                print(f'solutions: {len(solutions)}')
-                for i in range(1, len(solutions)):
-                    if self.solution_similarity(solutions[i].path, solutions[0].path) < 85:
-                        success = False
-                        print('failed similarity test')
-                        break
-                if success:
-                    break
-        
-        print(f'iterations: {iterations}')
+            if current_cell == self.end_cell and len(traversed) > num_cells*percent_traversed:
+                return traversed, iterations
         
         
     # this method takes a randomly generated path and places numbers throughout that path
     def place_numbers_in_path(self, path):
-        step = int((self.grid_size_x + self.grid_size_y) // 2) + 4
+        step = int((self.grid_size_x + self.grid_size_y) // 2) + 8
         up_to = int(len(path) // step)
         place_nums_at = [0]
         for i in range(up_to):
@@ -582,8 +633,7 @@ class Maze:
                 if x < self.grid_size_x - 1:
                     cell_horizontal_pairs.append(((x, y), (x+1, y)))
                 if y < self.grid_size_y - 1:
-                    cell_vertical_pairs.append(((x, y), (x, y+1))
-                )
+                    cell_vertical_pairs.append(((x, y), (x, y+1)))
         for cell_pair in cell_horizontal_pairs:
             if self.cells_consecutive_in_path(self.cells[cell_pair[0]], self.cells[cell_pair[1]], path):
                 change_wall = False
@@ -745,3 +795,56 @@ class Maze:
             elif wall_to_remove == 'left':
                 self.cells[(cell.x-1, cell.y)].walls['right'] = False
             cutoff_cells = self.find_cells_in_cutoff_sections()
+       
+            
+    def number_higher_than_one_reachable_before_one(self):
+        possible_paths = [Path([self.start_cell])]
+        new_paths = []
+        iterations = 0
+
+        while possible_paths:
+            for solution in possible_paths:
+                iterations += 1
+                current = solution.path[-1]
+                if current.number != None:
+                    if current.number > 1:
+                        return True
+                    else:
+                        continue
+                for neighbor in current.legal_neighbors(self, solution.path):
+                    new_path = Path(solution.path + [neighbor], neighbor.number if neighbor.number is not None else solution.last_seen_number)
+                    new_paths.append(new_path)
+            possible_paths = new_paths
+            new_paths = []
+        
+        return False
+    
+    
+    def does_path_pass_end(self, path:list[Cell], fraction=2/3):
+        for i in range(0, int(len(path)*fraction)):
+            cell = path[i]
+            # check four cells around the current cell
+            if cell.x > 0 and self.cells[(cell.x-1, cell.y)].is_end:
+                return True
+            if cell.x < self.grid_size_x-1 and self.cells[(cell.x+1, cell.y)].is_end:
+                return True
+            if cell.y > 0 and self.cells[(cell.x, cell.y-1)].is_end:
+                return True
+            if cell.y < self.grid_size_y-1 and self.cells[(cell.x, cell.y+1)].is_end:
+                return True
+            
+            
+    def are_two_non_consecutive_nums_next_to_each_other(self):
+        cells_with_numbers = [cell for cell in self.cells.values() if cell.number is not None]
+        for i in range(len(cells_with_numbers)):
+            cell = cells_with_numbers[i]
+            # check four cells around the current cell
+            if cell.x > 0 and self.cells[(cell.x-1, cell.y)].number is not None and abs(cell.number - self.cells[(cell.x-1, cell.y)].number) > 1:
+                return True
+            if cell.x < self.grid_size_x-1 and self.cells[(cell.x+1, cell.y)].number is not None and abs(cell.number - self.cells[(cell.x+1, cell.y)].number) > 1:
+                return True
+            if cell.y > 0 and self.cells[(cell.x, cell.y-1)].number is not None and abs(cell.number - self.cells[(cell.x, cell.y-1)].number) > 1:
+                return True
+            if cell.y < self.grid_size_y-1 and self.cells[(cell.x, cell.y+1)].number is not None and abs(cell.number - self.cells[(cell.x, cell.y+1)].number) > 1:
+                return True
+            
