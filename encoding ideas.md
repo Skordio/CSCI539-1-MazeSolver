@@ -13,3 +13,7 @@ The maze constructor can just take that file. In the maze definition file, we co
 Problem: in this type of maze, you can wall yourself off so there is no way to solve it really easily. This will be a problem for dfs but not for bfs I think
 
 Possible solution: record turns before getting to the next number where all possible turns weren't explored. If we fuck up and it is impossible after getting to the current number, go back to the most recent turn before the number that wasn't explored and continue from there, exploring the next turn that wasn't taken
+
+## Measuring Unexpected Things
+
+One idea for measuring "unexpected things" would have to be measuring how close the path comes to the end square before it is the end. So like if you have a path where halfway through it passes by the end before returning to finally end, that would be unexpected.
