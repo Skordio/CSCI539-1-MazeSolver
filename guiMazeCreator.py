@@ -309,19 +309,10 @@ class MazeEditor:
             print("No solution found")
     
     def solve_bfs(self):
-        # show gui input window for which solution to show
-        solutionNum = simpledialog.askinteger("Input", "Which solution should be drawn:", parent=self.master, minvalue=0, maxvalue=20)
-
         if self.solved:
             self.remove_solution()
-        solutions = self.maze.solve_bfs(one_solution=False)
-        print(f"Found {len(solutions)} solutions")
+        solution = self.maze.solve_bfs(one_solution=True)[0]
         
-        if len(solutions) > 1:
-            similarity = self.maze.solution_similarity(solutions[0].path_coords(), solutions[solutionNum].path_coords())
-            print(f"Similarity between first two solutions: {similarity:.2f}")
-        
-        solution = solutions[solutionNum]
         if solution:
             self.draw_solution(solution.path_coords())
             self.solved = True 
