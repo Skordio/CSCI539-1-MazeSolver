@@ -7,5 +7,17 @@ One idea for measuring "unexpected things" would have to be measuring how close 
 
 ## Need to implement
 
-- ability to compare similarity of two solutions, if under a certain similarity then don't use that maze because we want one with only one solution
-- ability to measure either difficulty or fun/unexpectedness
+- we're only gonna measure the amount of fun that a maze is, as they don't tend to get extremely difficult
+- 'fun' will be measured based on: length of solution path and two 'unexpected' factors: how close the path gets to the end before actually getting there, and whether numbers are next to each other (that are not consecutive)
+
+the base amount of fun will be determined by length of path, and the final score will be slightly influenced by these two extra factors
+
+5 - should only be reachable when having max length and both of these extra factors
+4 - reachable by max length and one of the two factors
+3 - reachable just by going maxish length
+2 - reachable at 2/3 of max length
+1 - reachable at 1/3 of max length
+
+
+max length for 20x20 - 50%
+max length for 15x12 - 70%

@@ -406,6 +406,7 @@ class Maze:
         while True:
             iterations += 1
             # reset maze
+            self.__init__(self.grid_size_x, self.grid_size_y)
             self.reset_cells()
             self.set_start(0, 0)
             self.set_end(self.grid_size_x-1, self.grid_size_y-1)
@@ -434,15 +435,26 @@ class Maze:
                     break
             # measure whether the path we have fits our criteria, and if so, 
             # finish setting up the maze. If not, we try again.
-            if current_cell == self.end_cell and len(traversed) > num_cells*0.7:
-                break
+            if current_cell == self.end_cell and len(traversed) > num_cells*0.5:
+                success = True
+                self.draw_walls_around_path(traversed)
+                self.place_numbers_in_path(traversed)
+                self.randomize_walls_for_path(traversed)
+                self.remove_outer_walls()
+                self.remove_every_square_wall()
+                self.remove_cutoff_sections()
+                solutions = self.solve_bfs()
+                print(f'solutions: {len(solutions)}')
+                for i in range(1, len(solutions)):
+                    if self.solution_similarity(solutions[i].path, solutions[0].path) < 85:
+                        success = False
+                        print('failed similarity test')
+                        break
+                if success:
+                    break
         
-        self.draw_walls_around_path(traversed)
-        self.place_numbers_in_path(traversed)
-        self.randomize_walls_for_path(traversed)
-        self.remove_outer_walls()
-        self.remove_every_square_wall()
         print(f'iterations: {iterations}')
+        
         
     # this method takes a randomly generated path and places numbers throughout that path
     def place_numbers_in_path(self, path):
@@ -658,6 +670,7 @@ class Maze:
                 cell.walls['top'] = False
             if cell.y == self.grid_size_y - 1:
                 cell.walls['bottom'] = False
+               
                 
     def solution_similarity(self, solution1, solution2):
         # Convert both solutions to sets
@@ -683,3 +696,52 @@ class Maze:
         similarity_percentage = similarity_score * 100
         
         return similarity_percentage
+    
+
+    def find_cells_in_cutoff_sections(self):
+        traversed = set([])
+        current = set([self.start_cell])
+        next_iter = set([])
+        while current:
+            for cell in current:
+                neighbors = cell.legal_neighbors(self)
+                for neighbor in neighbors:
+                    if not neighbor in traversed:
+                        next_iter.add(neighbor)
+                traversed.add(cell)
+            current = next_iter
+            next_iter = set([])
+        traversed_set = set(traversed)
+        cells_set = set(self.cells.values())
+        cutoff_cells = cells_set - traversed_set
+        cutoff_cells = list(cutoff_cells)
+        cutoff_cells.sort(key=lambda x: x.coords())
+        return cutoff_cells
+    
+    
+    def remove_cutoff_sections(self):
+        cutoff_cells = self.find_cells_in_cutoff_sections()
+        while cutoff_cells:
+            cell = cutoff_cells[0]
+            # find which walls this cell has
+            walls = []
+            if cell.walls['top']:
+                walls.append('top')
+            if cell.walls['right']:
+                walls.append('right')
+            if cell.walls['bottom']:
+                walls.append('bottom')
+            if cell.walls['left']:
+                walls.append('left')
+            # remove one of the walls
+            wall_to_remove = random.choice(walls)
+            cell.walls[wall_to_remove] = False
+            if wall_to_remove == 'top':
+                self.cells[(cell.x, cell.y-1)].walls['bottom'] = False
+            elif wall_to_remove == 'right':
+                self.cells[(cell.x+1, cell.y)].walls['left'] = False
+            elif wall_to_remove == 'bottom':
+                self.cells[(cell.x, cell.y+1)].walls['top'] = False
+            elif wall_to_remove == 'left':
+                self.cells[(cell.x-1, cell.y)].walls['right'] = False
+            cutoff_cells = self.find_cells_in_cutoff_sections()
