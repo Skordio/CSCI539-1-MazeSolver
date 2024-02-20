@@ -437,15 +437,16 @@ class Maze:
         
         
     def place_numbers_in_path(self, path):
-        up_to = int(((self.grid_size_x + self.grid_size_y) // 2) / 2)
-        step = int(len(path)//up_to)
+        step = int((self.grid_size_x + self.grid_size_y) // 2) + 4
+        up_to = int(len(path) // step)
         place_nums_at = [0]
         for i in range(up_to):
-            step_with_diff = step + random.randint(-2, 2)
+            step_with_diff = step + random.randint(-4, 4)
             place_nums_at.append(place_nums_at[i] + step_with_diff)
         for i in range(1, up_to):
-            self.add_number(i)
-            path[place_nums_at[i]].number = i
+            if place_nums_at[i] < len(path):
+                self.add_number(i)
+                path[place_nums_at[i]].number = i
             
             
     def draw_walls_around_path(self, path):
