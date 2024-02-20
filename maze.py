@@ -658,3 +658,28 @@ class Maze:
                 cell.walls['top'] = False
             if cell.y == self.grid_size_y - 1:
                 cell.walls['bottom'] = False
+                
+    def solution_similarity(self, solution1, solution2):
+        # Convert both solutions to sets
+        set1 = set(solution1)
+        set2 = set(solution2)
+        
+        # Calculate intersection and union
+        intersection = set1.intersection(set2)
+        union = set1.union(set2)
+        
+        # Compute the raw similarity based on common cells
+        raw_similarity = len(intersection) / len(union) if union else 1  # Avoid division by zero
+        
+        # Adjust the similarity score to account for path length differences
+        # This step considers the similarity in path lengths to slightly adjust the score
+        length_similarity = 1 - abs(len(solution1) - len(solution2)) / (len(solution1) + len(solution2) + 1)  # +1 to avoid division by zero
+        
+        # Combine both similarity measures, weighting can be adjusted as needed
+        # Here, we simply average them, but different weighting could be applied
+        similarity_score = (raw_similarity + length_similarity) / 2
+        
+        # Convert to percentage
+        similarity_percentage = similarity_score * 100
+        
+        return similarity_percentage
