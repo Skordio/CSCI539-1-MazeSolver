@@ -3,7 +3,7 @@ import time
 from typing import Literal, List, Dict, Tuple
 from collections import deque
 import os
-import random
+import random, copy
 
 class Cell:
     def __init__(self, x, y):
@@ -181,7 +181,7 @@ class Maze:
 
 
     def save_to_file(self, filename):
-        with open(f'mazes\{filename}', 'wb') as maze_file:
+        with open(os.path.join('mazes', filename), 'wb') as maze_file:
             maze_file.write(int(self.grid_size_x).to_bytes(1, 'big'))
             maze_file.write(int(self.grid_size_y).to_bytes(1, 'big'))
                     
@@ -237,8 +237,8 @@ class Maze:
                 traversed.path.append(current_cell)
                 last_seen_number = current_cell.number if current_cell.number is not None else last_seen_number
                 # if we are at the end, we have the solution
-                if current_cell.is_end:
-                    solutions.append(traversed)
+                if current_cell.is_end == True:
+                    solutions.append(copy.deepcopy(traversed))
                     legal_neighbors = []
                 else:
                     # check for legal neighbors
@@ -323,7 +323,7 @@ class Maze:
                 last_seen_number = current_cell.number if current_cell.number is not None else last_seen_number
                 # if we are at the end, we have the solution
                 if current_cell.is_end:
-                    solutions.append(traversed)
+                    solutions.append(copy.deepcopy(traversed))
                     legal_neighbors = []
                 else:
                     # check for legal neighbors
@@ -343,13 +343,15 @@ class Maze:
             
             f.write(f'iterations: {iterations}\n')
             return solutions
+   
         
-    def new_random_maze(self):
+    def new_maze_random_walls(self):
         solutions = []
         iterations = 0
         while len(solutions) == 0:
             iterations += 1
             self.set_grid_size(self.grid_size_x, self.grid_size_y)
+            self.__init__(self.grid_size_x, self.grid_size_y)
             self.reset_cells()
             self.set_start(0, 0)
             self.set_end(self.grid_size_x-1, self.grid_size_y-1)
@@ -381,3 +383,136 @@ class Maze:
             self.numbers = []
             solutions = self.solve_dfs()
         print(f'iterations: {iterations}')
+        
+    # this method takes a completely empty maze with no walls, and walks through a random path to take the first step in creating a maze
+    def new_maze_random_path(self):
+        not_valid = True
+        traversed = []
+        iterations = 0
+        num_cells = self.grid_size_x * self.grid_size_y
+        
+        while not_valid:
+            iterations += 1
+            self.reset_cells()
+            self.set_start(0, 0)
+            self.set_end(self.grid_size_x-1, self.grid_size_y-1)
+            current_cell = self.start_cell
+            traversed = [current_cell]
+            while current_cell != self.end_cell:
+                legal_neighbors = current_cell.legal_neighbors(self, traversed)
+                if legal_neighbors:
+                    next_cell = random.choice(legal_neighbors) 
+                    traversed.append(next_cell)
+                    current_cell = next_cell
+                else:
+                    break
+            if current_cell == self.end_cell and len(traversed) > num_cells*0.6:
+                not_valid = False
+        
+        self.draw_walls_around_path(traversed)
+        print(f'iterations: {iterations}')
+    
+            
+    def draw_walls_around_path(self, path):
+        previous_cell = None
+        current_cell = None
+        next_cell = None
+        for i in range(len(path)):
+            current_cell = path[i]
+            if i != len(path)-1:
+                next_cell = path[i+1]
+            else:
+                next_cell = None
+            
+            if next_cell and current_cell.x < next_cell.x:
+                current_cell.walls['top'] = True
+                if (current_cell.x, current_cell.y-1) in self.cells.keys():
+                    self.cells[(current_cell.x, current_cell.y-1)].walls['bottom'] = True
+                current_cell.walls['left'] = True
+                if (current_cell.x-1, current_cell.y) in self.cells.keys():
+                    self.cells[(current_cell.x-1, current_cell.y)].walls['right'] = True
+                current_cell.walls['bottom'] = True
+                if (current_cell.x, current_cell.y+1) in self.cells.keys():
+                    self.cells[(current_cell.x, current_cell.y+1)].walls['top'] = True
+                next_cell.walls['top'] = True
+                if (next_cell.x, next_cell.y-1) in self.cells.keys():
+                    self.cells[(next_cell.x, next_cell.y-1)].walls['bottom'] = True
+                next_cell.walls['right'] = True
+                if (next_cell.x+1, next_cell.y) in self.cells.keys():
+                    self.cells[(next_cell.x+1, next_cell.y)].walls['left'] = True
+                next_cell.walls['bottom'] = True
+                if (next_cell.x, next_cell.y+1) in self.cells.keys():
+                    self.cells[(next_cell.x, next_cell.y+1)].walls['top'] = True
+            elif next_cell and current_cell.x > next_cell.x:
+                current_cell.walls['top'] = True
+                if (current_cell.x, current_cell.y-1) in self.cells.keys():
+                    self.cells[(current_cell.x, current_cell.y-1)].walls['bottom'] = True
+                current_cell.walls['right'] = True
+                if (current_cell.x+1, current_cell.y) in self.cells.keys():
+                    self.cells[(current_cell.x+1, current_cell.y)].walls['left'] = True
+                current_cell.walls['bottom'] = True
+                if (current_cell.x, current_cell.y+1) in self.cells.keys():
+                    self.cells[(current_cell.x, current_cell.y+1)].walls['top'] = True
+                next_cell.walls['top'] = True
+                if (next_cell.x, next_cell.y-1) in self.cells.keys():
+                    self.cells[(next_cell.x, next_cell.y-1)].walls['bottom'] = True
+                next_cell.walls['left'] = True
+                if (next_cell.x-1, next_cell.y) in self.cells.keys():
+                    self.cells[(next_cell.x-1, next_cell.y)].walls['right'] = True
+                next_cell.walls['bottom'] = True
+                if (next_cell.x, next_cell.y+1) in self.cells.keys():
+                    self.cells[(next_cell.x, next_cell.y+1)].walls['top'] = True
+            elif next_cell and current_cell.y < next_cell.y:
+                current_cell.walls['top'] = True
+                if (current_cell.x, current_cell.y-1) in self.cells.keys():
+                    self.cells[(current_cell.x, current_cell.y-1)].walls['bottom'] = True
+                current_cell.walls['right'] = True
+                if (current_cell.x+1, current_cell.y) in self.cells.keys():
+                    self.cells[(current_cell.x+1, current_cell.y)].walls['left'] = True
+                current_cell.walls['left'] = True
+                if (current_cell.x-1, current_cell.y) in self.cells.keys():
+                    self.cells[(current_cell.x-1, current_cell.y)].walls['right'] = True
+                next_cell.walls['left'] = True
+                if (next_cell.x-1, next_cell.y) in self.cells.keys():
+                    self.cells[(next_cell.x-1, next_cell.y)].walls['right'] = True
+                next_cell.walls['right'] = True
+                if (next_cell.x+1, next_cell.y) in self.cells.keys():
+                    self.cells[(next_cell.x+1, next_cell.y)].walls['left'] = True
+                next_cell.walls['bottom'] = True
+                if (next_cell.x, next_cell.y+1) in self.cells.keys():
+                    self.cells[(next_cell.x, next_cell.y+1)].walls['top'] = True
+            elif next_cell and current_cell.y > next_cell.y:
+                current_cell.walls['left'] = True
+                if (current_cell.x-1, current_cell.y) in self.cells.keys():
+                    self.cells[(current_cell.x-1, current_cell.y)].walls['right'] = True
+                current_cell.walls['right'] = True
+                if (current_cell.x+1, current_cell.y) in self.cells.keys():
+                    self.cells[(current_cell.x+1, current_cell.y)].walls['left'] = True
+                current_cell.walls['bottom'] = True
+                if (current_cell.x, current_cell.y+1) in self.cells.keys():
+                    self.cells[(current_cell.x, current_cell.y+1)].walls['top'] = True
+                next_cell.walls['left'] = True
+                if (next_cell.x-1, next_cell.y) in self.cells.keys():
+                    self.cells[(next_cell.x-1, next_cell.y)].walls['right'] = True
+                next_cell.walls['right'] = True
+                if (next_cell.x+1, next_cell.y) in self.cells.keys():
+                    self.cells[(next_cell.x+1, next_cell.y)].walls['left'] = True
+                next_cell.walls['top'] = True
+                if (next_cell.x, next_cell.y-1) in self.cells.keys():
+                    self.cells[(next_cell.x, next_cell.y-1)].walls['bottom'] = True
+            if previous_cell and previous_cell.x < current_cell.x:
+                current_cell.walls['left'] = False
+                previous_cell.walls['right'] = False
+            elif previous_cell and previous_cell.x > current_cell.x:
+                current_cell.walls['right'] = False
+                previous_cell.walls['left'] = False
+            elif previous_cell and previous_cell.y < current_cell.y:
+                current_cell.walls['top'] = False
+                previous_cell.walls['bottom'] = False
+            elif previous_cell and previous_cell.y > current_cell.y:
+                current_cell.walls['bottom'] = False
+                previous_cell.walls['top'] = False
+            
+            
+            previous_cell = current_cell
+            
