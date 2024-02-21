@@ -409,66 +409,92 @@ class Maze:
                     self.cells[cell[1]].walls['top'] = False
             self.numbers = []
             solutions = self.solve_dfs()
-        print(f'iterations: {iterations}')
+        self.remove_cutoff_sections()
         
         
     # this method takes a completely empty maze with no walls, and walks through a random path to take the first step in creating a maze
-    def new_maze_random_path(self):
+    # fun_score goes from 1 to 4, with 4 being the most fun and 1 being the least fun
+    def new_maze_random_path(self, fun_score=3, print_checks=False):
+        if fun_score not in [1, 2, 3, 4]:
+            raise ValueError('fun_score must be 1, 2, 3, or 4')
+        
         iterations = 0
         num_cells = self.grid_size_x * self.grid_size_y
+        
         max_length_for_size = {
             5: 0.9,
             8: 0.8,
             11: 0.65,
             14: 0.5
         }
+        
         max_length_percentage = 0.9
         average_size = (self.grid_size_x + self.grid_size_y) // 2
+        
         for entry in max_length_for_size:
             if average_size >= entry:
                 max_length_percentage = max_length_for_size[entry]
-        print(f'max_length: {max_length_percentage}')
+                
+        if fun_score == 1:
+            max_length_percentage = 0.5*max_length_percentage
+        if fun_score == 2:
+            max_length_percentage = 0.65*max_length_percentage
+        if fun_score == 3:
+            max_length_percentage = 0.8*max_length_percentage
+            
+        if print_checks:
+            print(f'max_length: {max_length_percentage}')
         
         while True:
-            path, path_iterations = self.generate_random_path(max_length_percentage)
-            print('\nsuccessfully made path')
-            iterations += path_iterations
-            
-            self.draw_walls_around_path(path)
-            self.place_numbers_in_path(path)
-            self.remove_outer_walls()
-            
-            self.randomize_walls_for_path(path)
-            self.remove_every_square_wall()
-            self.remove_cutoff_sections()
-            
-            
-            if not self.number_higher_than_one_reachable_before_one():
-                print('failed number test')
-                continue
-            else:
-                print('passed number test')
-            
-            similarity_test = True
-            new_solution = self.solve_bfs(one_solution=True)[0]
-            if len(new_solution.path) < num_cells*(max_length_percentage-0.1):
-                print('failed length test')
-                continue
-            else:
-                print('passed length test')
-            # if average_size < 15:
-            #     solutions = self.solve_bfs()
-            #     print(f'solutions: {len(solutions)}')   
-            #     for i in range(1, len(solutions)):
-            #         if self.solution_similarity(solutions[i].path, solutions[0].path) < 85:
-            #             print('failed similarity test')
-            #             similarity_test = False
-            #             break
-            if similarity_test:
-                print('passed similarity test')
+            try:
+                path, path_iterations = self.generate_random_path(max_length_percentage)
+                iterations += path_iterations
+                
+                if print_checks:
+                    print('\nsuccessfully made path')
+                
+                self.draw_walls_around_path(path)
+                self.place_numbers_in_path(path)
+                
+                self.remove_outer_walls()
+                
+                self.randomize_walls_for_path(path)
+                self.remove_cutoff_sections()
+                
+                if fun_score > 2:
+                    if not self.number_higher_than_one_reachable_before_one():
+                        if print_checks:
+                            print('failed number test')
+                        continue
+                    else:
+                        if print_checks:
+                            print('passed number test')
+                    
+                if fun_score > 3:
+                    end_test = self.does_path_pass_end(path)
+                    consecutive_test = self.are_two_non_consecutive_nums_next_to_each_other()
+                    if not end_test and not consecutive_test:
+                        if print_checks:
+                            print('failed fun score == 4 test')
+                        continue
+                    else:
+                        if print_checks:
+                            print(f'passed fun score == 4 test with end_test: {end_test} and consecutive_test: {consecutive_test}')
+                    
+                new_solution = self.solve_bfs(one_solution=True)[0]
+                if len(new_solution.path) < num_cells*(max_length_percentage-0.1):
+                    if print_checks:
+                        print('failed length test')
+                    continue
+                else:
+                    if print_checks:
+                        print('passed length test')
                 break
+            except:
+                continue
         
-        print(f'iterations: {iterations}')
+        if print_checks:
+            print(f'iterations: {iterations}')
         
     
     def generate_random_path(self, percent_traversed) -> Tuple[List[Cell], int]:
@@ -694,30 +720,6 @@ class Maze:
             return True
         if cell.y == self.grid_size_y - 1 and cell.walls['top'] and cell.walls['left'] and cell.walls['right']:
             return True
-    
-    
-    def remove_every_square_wall(self):
-        for cell in self.cells.values():
-            if self.cell_is_square(cell):
-                choices = ['top', 'right', 'bottom', 'left']
-                if cell.x == 0:
-                    choices.remove('left')
-                if cell.x == self.grid_size_x - 1:
-                    choices.remove('right')
-                if cell.y == 0:
-                    choices.remove('top')
-                if cell.y == self.grid_size_y - 1:
-                    choices.remove('bottom')
-                choice = random.choice(choices)
-                cell.walls[choice] = False
-                if choice == 'top' and (cell.x, cell.y-1) in self.cells.keys():
-                    self.cells[(cell.x, cell.y-1)].walls['bottom'] = False
-                elif choice == 'right' and (cell.x+1, cell.y) in self.cells.keys():
-                    self.cells[(cell.x+1, cell.y)].walls['left'] = False
-                elif choice == 'bottom' and (cell.x, cell.y+1) in self.cells.keys():
-                    self.cells[(cell.x, cell.y+1)].walls['top'] = False
-                elif choice == 'left' and (cell.x-1, cell.y) in self.cells.keys():
-                    self.cells[(cell.x-1, cell.y)].walls['right'] = False
                     
                     
     def remove_outer_walls(self):
@@ -842,6 +844,7 @@ class Maze:
                 return True
             if cell.y < self.grid_size_y-1 and self.cells[(cell.x, cell.y+1)].is_end:
                 return True
+        return False
             
             
     def are_two_non_consecutive_nums_next_to_each_other(self):
@@ -857,4 +860,5 @@ class Maze:
                 return True
             if cell.y < self.grid_size_y-1 and self.cells[(cell.x, cell.y+1)].number is not None and abs(cell.number - self.cells[(cell.x, cell.y+1)].number) > 1:
                 return True
+        return False
             

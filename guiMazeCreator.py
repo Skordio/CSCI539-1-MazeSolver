@@ -69,10 +69,10 @@ class MazeEditor:
         self.button_frame3 = tk.Frame(self.master)
         self.button_frame3.pack(side=tk.TOP, fill=tk.X, padx=20, pady=(0, 10))
         
-        self.new_random_maze_button = tk.Button(self.button_frame3, text="Random Walls", command=self.new_maze_random_walls)
+        self.new_random_maze_button = tk.Button(self.button_frame3, text="Generate From Random Walls", command=self.new_maze_random_walls)
         self.new_random_maze_button.pack(side=tk.LEFT)
         
-        self.new_random_maze_button = tk.Button(self.button_frame3, text="Random Path", command=self.new_maze_random_path)
+        self.new_random_maze_button = tk.Button(self.button_frame3, text="Generate From Random Path", command=self.new_maze_random_path)
         self.new_random_maze_button.pack(side=tk.LEFT)
         
         self.save_to_file_button = tk.Button(self.button_frame3, text="Save to File", command=self.save_to_file_prompt)
@@ -352,7 +352,8 @@ class MazeEditor:
         self.redraw_all()
         
     def new_maze_random_path(self):
-        self.maze.new_maze_random_path()
+        fun_score = simpledialog.askinteger("Input", "Enter fun score from 1 to 4 (note - higher fun scores will take longer to generate):", parent=self.master, minvalue=1, maxvalue=4)
+        self.maze.new_maze_random_path(fun_score)
         self.redraw_all()
 
 parser = ArgumentParser(
