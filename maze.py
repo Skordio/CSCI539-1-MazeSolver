@@ -415,21 +415,22 @@ class Maze:
     # this method takes a completely empty maze with no walls, and walks through a random path to take the first step in creating a maze
     def new_maze_random_path(self):
         iterations = 0
+        num_cells = self.grid_size_x * self.grid_size_y
         max_length_for_size = {
             5: 0.9,
-            10: 0.7,
-            12: 0.65,
-            16: 0.4
+            8: 0.8,
+            11: 0.65,
+            14: 0.5
         }
-        max_length = 0.9
+        max_length_percentage = 0.9
         average_size = (self.grid_size_x + self.grid_size_y) // 2
         for entry in max_length_for_size:
             if average_size >= entry:
-                max_length = max_length_for_size[entry]
-        print(f'max_length: {max_length}')
+                max_length_percentage = max_length_for_size[entry]
+        print(f'max_length: {max_length_percentage}')
         
         while True:
-            path, path_iterations = self.generate_random_path(max_length)
+            path, path_iterations = self.generate_random_path(max_length_percentage)
             print('\nsuccessfully made path')
             iterations += path_iterations
             
@@ -449,14 +450,20 @@ class Maze:
                 print('passed number test')
             
             similarity_test = True
-            if average_size < 15:
-                solutions = self.solve_bfs()
-                print(f'solutions: {len(solutions)}')   
-                for i in range(1, len(solutions)):
-                    if self.solution_similarity(solutions[i].path, solutions[0].path) < 85:
-                        print('failed similarity test')
-                        similarity_test = False
-                        break
+            new_solution = self.solve_bfs(one_solution=True)[0]
+            if len(new_solution.path) < num_cells*(max_length_percentage-0.1):
+                print('failed length test')
+                continue
+            else:
+                print('passed length test')
+            # if average_size < 15:
+            #     solutions = self.solve_bfs()
+            #     print(f'solutions: {len(solutions)}')   
+            #     for i in range(1, len(solutions)):
+            #         if self.solution_similarity(solutions[i].path, solutions[0].path) < 85:
+            #             print('failed similarity test')
+            #             similarity_test = False
+            #             break
             if similarity_test:
                 print('passed similarity test')
                 break
@@ -509,11 +516,14 @@ class Maze:
         
     # this method takes a randomly generated path and places numbers throughout that path
     def place_numbers_in_path(self, path):
-        step = int((self.grid_size_x + self.grid_size_y) // 2) + 8
+        step = int((self.grid_size_x + self.grid_size_y) // 2) + 5
         up_to = int(len(path) // step)
         place_nums_at = [0]
         for i in range(up_to):
-            step_with_diff = step + random.randint(-4, 4)
+            if i == 1:
+                step_with_diff = step + 4
+            else:
+                step_with_diff = step + random.randint(-3, 3)
             place_nums_at.append(place_nums_at[i] + step_with_diff)
         for i in range(1, up_to):
             if place_nums_at[i] < len(path):
