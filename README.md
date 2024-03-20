@@ -1,4 +1,4 @@
-# Numbered Maze Solver/Creator - Assignments 1 and 2
+# Numbered Maze Solver/Creator - Assignments 1 and 2 for CSCI 539
 
 This repo contains my code for assignments 1 and 2 in CSCI 539 - Maze Solver/Creator
 
