@@ -3,6 +3,12 @@
 This repo contains my code for assignments 1 and 2 in CSCI 539 - Maze Solver/Creator
 
 
+<div style="max-width: 400px;">
+    <img
+        src="./docs/pictures/program.png"
+    />
+</div>
+
 ## Numbered Maze
 
 The type of maze that this program works with is a special type of maze where some cells are numbered. Before you reach the end of the maze you must pass through every one of the numbers in order, starting at 1 and going up to whatever is the last number.
@@ -41,4 +47,4 @@ To run this code, launch guiAkariCreator.py like
 python3 guiMazeCreator.py -f fun_4_1
 ```
 
--f is an option you can use to load up a file automatically
+-f is an option you can use to load up a file on launch, it only looks in the /mazes folder for files
